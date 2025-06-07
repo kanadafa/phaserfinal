@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Shadow Clone Game</title>
+<script src="./phaser-3.88.2/dist/phaser.js"></script>
+<style>
+  body { 
+    margin: 0; padding: 0; height: 100%;
+    background-image: url(./assets/第二關720p.jpg);
+    background-size: cover;
+    background-repeat: no-repeat;
+    overflow: hidden;
+  }
+  canvas { 
+    display: block; 
+    margin: auto; 
+    opacity: 0.7;
+  }
+</style>
+</head>
+<body>
+<script>
+const config = {
+    type: Phaser.AUTO,
+    width: 640,
+    height: 800,
+    scale: { autoCenter: Phaser.Scale.CENTER_BOTH },
+    pixelArt: true,
+    physics: {
+        default: "arcade",
+        arcade: { gravity: { y: 800 } },
+    },
+    scene: {
+        preload,
+        create,
+        update
+    }
+};
+
+const game = new Phaser.Game(config);
+
+let player, shadow, cursors, platforms;
+let canDoubleJump = true;
+let countdownText;
+let recordedInputs = [];
+let shadowStartTime = 0;
+let gameOver = false;
+let gameOverButton;
+let winPoint;
+
+function preload() {
+    this.load.image("trees", "assets/trees.png");
+    this.load.image("clouds", "assets/clouds.png");
+    this.load.image("platform", "assets/platform.png");
+    this.load.image("ice-platform", "assets/platform.png");
+    this.load.image("platform1", "assets/form1.png");
+    this.load.spritesheet("girl", "assets/girl1.png", {
+        frameWidth: 25, frameHeight: 48
+    });
+    this.load.image("red", "assets/red.png");
+    this.load.image("winPoint", "assets/red.png");
+
+    this.load.audio('bgm', 'assets/home.mp3');
+    this.load.audio('caught', 'assets/playerdeath.mp3');
+    this.load.audio('win', 'assets/win.mp3');
+}
+
+function create() {
+    this.bgm = this.sound.add('bgm', { loop: true });
+  // 設定音量（0.0 ~ 1.0）
+this.bgm.play();
+
+this.bgm.setVolume(1.0);
+
+    this.physics.world.setBounds(0, 0, 640, 2000);
+
+    this.add.tileSprite(320, 240, 640, 800, "clouds")
+    .setScrollFactor(0)
+    .setTint(0xff0000); // 紅色
+    this.add.sprite(0, 1920, "trees").setOrigin(0).setTint(0xff0000); // 紅色;
+
+    countdownText = this.add.text(500, 10, '', { fontSize: '20px', fill: '#fff' }).setScrollFactor(0);
+
+    player = this.physics.add.sprite(320, 1952, "girl").setCollideWorldBounds(true).setBounce(0.2);
+    player.body.setSize(20, 40).setOffset(2, 5);
+
+    platforms = this.physics.add.group({ immovable: true, allowGravity: false });
+    this.physics.add.collider(player, platforms, setFriction, null, this);
+
+    let x = 0, y = 64;
+    for (let i = 0; i < 51; i++) {
+        if (y > 502) {
+            const type = i % 2 === 0 ? "platform" : "ice-platform";
+            let platform = platforms.create(x, y, type).setVelocityX(100).setOrigin(0);
+            if (type === "platform") platform.body.setFriction(1);
+            if (Math.random() > 0.5) platform.body.velocity.x *= -1;
+        }
+        x += 200;
+        if (x >= 600) x = 0;
+        y += 104;
+    }
+
+    const staticPlatform = platforms.create(320, 550, "platform1").setImmovable(true).setVelocity(0).setOrigin(0.5).setScale(3);
+    staticPlatform.body.setAllowGravity(false);
+
+    winPoint = this.physics.add.staticSprite(320, 400, "winPoint").setScale(1.5);
+    this.physics.add.overlap(player, winPoint, handleWin, null, this);
+
+    let count = 5;
+    countdownText.setText(`倒數：${count}`);
+    this.time.addEvent({
+        delay: 1000,
+        repeat: 4,
+        callback: () => {
+            count--;
+            countdownText.setText(`倒數：${count}`);
+            if (count === 0) {
+                countdownText.setVisible(false);
+                spawnShadow(this);
+                shadowStartTime = this.time.now;
+            }
+        }
+    });
+
+    this.cameras.main.setBounds(0, 0, 640, 2000).startFollow(player, true, 0, 0.05, 0, 100);
+
+    this.anims.create({ key: "left", frames: this.anims.generateFrameNumbers("girl", { start: 0, end: 1 }), frameRate: 10, repeat: -1 });
+    this.anims.create({ key: "turn", frames: [{ key: "girl", frame: 2 }], frameRate: 20 });
+    this.anims.create({ key: "right", frames: this.anims.generateFrameNumbers("girl", { start: 3, end: 4 }), frameRate: 10, repeat: -1 });
+
+    cursors = this.input.keyboard.createCursorKeys();
+
+    gameOverButton = this.add.text(320, 400, '重新開始遊戲', {
+        fontSize: '24px', fill: '#f00', backgroundColor: '#000',
+        padding: { x: 10, y: 5 },
+        align: 'center'
+    }).setInteractive().setVisible(false).setScrollFactor(0);
+
+    gameOverButton.setOrigin(0.5);
+
+    gameOverButton.on('pointerdown', () => {
+        gameOver = false;
+        location.reload();
+    });
+}
+
+function update(time) {
+    if (gameOver) return;
+
+    let onGround = player.body.blocked.down || player.body.touching.down;
+    if (onGround) canDoubleJump = true;
+
+    player.setVelocityX(0);
+    if (cursors.left.isDown) {
+        player.setVelocityX(-300);
+        player.anims.play("left", true);
+    } else if (cursors.right.isDown) {
+        player.setVelocityX(300);
+        player.anims.play("right", true);
+    } else {
+        player.anims.play("turn");
+    }
+
+    if (Phaser.Input.Keyboard.JustDown(cursors.up)) {
+        if (onGround) {
+            player.setVelocityY(-500);
+        } else if (canDoubleJump) {
+            player.setVelocityY(-500);
+            canDoubleJump = false;
+        }
+    }
+
+    recordedInputs.push({
+        time: time,
+        x: player.x,
+        y: player.y,
+        vx: player.body.velocity.x,
+        vy: player.body.velocity.y
+    });
+
+    if (shadow) {
+        let elapsed = time - shadowStartTime;
+        let past = recordedInputs.find(r => r.time >= elapsed);
+        if (past) {
+            shadow.setVelocity(past.vx, past.vy);
+            shadow.x = past.x;
+            shadow.y = past.y;
+
+            if (past.vx < 0) {
+                shadow.anims.play("left", true);
+            } else if (past.vx > 0) {
+                shadow.anims.play("right", true);
+            } else {
+                shadow.anims.play("turn");
+            }
+        }
+    }
+
+    platforms.getChildren().forEach(wrapPlatform);
+}
+
+function spawnShadow(scene) {
+    shadow = scene.physics.add.sprite(320, 1952, "girl")
+        .setTint(0xff00ff)
+       
+        .setDepth(player.depth)
+        .setCollideWorldBounds(true);
+
+    scene.physics.add.collider(shadow, platforms);
+    scene.physics.add.collider(player, shadow, () => {
+        if (!gameOver) {
+            gameOver = true;
+            scene.physics.pause();
+            player.anims.stop();
+            shadow.anims.stop();
+            gameOverButton.setVisible(true);
+        }
+    });
+
+    scene.time.addEvent({
+        delay: 2000,
+        callback: () => {
+            shadow.setAlpha(0.5);
+        }
+    });
+}
+
+function wrapPlatform(platform) {
+    if (platform.body.velocity.x < 0 && platform.x <= -160) {
+        platform.x = 640;
+    } else if (platform.body.velocity.x > 0 && platform.x >= 640) {
+        platform.x = -160;
+    }
+}
+
+function setFriction(player, platform) {
+    if (platform.texture.key === "ice-platform") {
+        player.setVelocityX(player.body.velocity.x * 0.99);
+    }
+}
+
+function handleWin() {
+    if (gameOver) return;
+    gameOver = true;
+    this.physics.pause();
+    player.anims.stop();
+    if (shadow) shadow.anims.stop();
+
+    this.add.text(320, 240, "你贏了！", {
+        fontSize: "48px",
+        fill: "#0f0",
+        backgroundColor: "#000"
+    }).setOrigin(0.5).setScrollFactor(0);
+}
+</script>
+</body>
+</html>

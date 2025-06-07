@@ -1,0 +1,218 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --primary-color: #2c3e50;
+    --secondary-color: #3498db;
+    --accent-color: #e74c3c;
+    --background-color: #ecf0f1;
+    --text-color: #2c3e50;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg, #2193b0, #6dd5ed, #2193b0);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow-y: hidden;
+    line-height: 1.6;
+    color: var(--text-color);
+}
+
+header {
+    text-align: center;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(10px);
+}
+
+h1 {
+    color: white;
+    margin: 0;
+    padding: 15px 0;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    font-weight: 600;
+    letter-spacing: 2px;
+}
+
+nav {
+    margin: 1.5rem 0;
+    padding: 0 1rem;
+}
+
+#gameList {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 30px;
+    padding: 30px 40px;
+    list-style: none;
+    margin: 0 auto;
+    width: 90%;
+    max-width: 1600px;
+    height: calc(100vh - 100px);
+    align-content: center;
+}
+
+.game-card {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 15px;
+    overflow: hidden;
+    transition: all 0.4s ease;
+    cursor: pointer;
+    position: relative;
+    aspect-ratio: 16/9;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    width: 100%;
+}
+
+.game-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.game-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(
+        to bottom,
+        rgba(0, 0, 0, 0) 0%,
+        rgba(0, 0, 0, 0.8) 100%
+    );
+    opacity: 0;
+    transition: opacity 0.4s ease;
+}
+
+.game-card:hover::before {
+    opacity: 1;
+}
+
+.game-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.4s ease;
+}
+
+.game-card:hover img {
+    transform: scale(1.05);
+}
+
+.game-info {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);
+    color: white;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+}
+
+.game-card:hover .game-info {
+    opacity: 1;
+}
+
+.game-info h2 {
+    margin: 0;
+    font-size: 1.3em;
+    font-weight: 600;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+main {
+    padding: 0;
+    margin: 0;
+    width: 100%;
+    height: 100vh;
+    position: relative;
+}
+
+#gameContainer {
+    flex: 1;
+    position: relative;
+    width: 100%;
+    height: calc(100vh - 40px);
+    display: none;
+}
+
+#gameContainer.active {
+    display: block;
+}
+
+#gameContainer iframe {
+    border: none;
+    width: 100%;
+    height: 100%;
+}
+
+button {
+    transition: all 0.3s ease;
+    background: linear-gradient(135deg, #3498db, #2980b9) !important;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+button:hover {
+    background: linear-gradient(135deg, #2980b9, #2471a3) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+@media (max-width: 1200px) {
+    #gameList {
+        grid-template-columns: repeat(2, 1fr);
+        padding: 30px;
+    }
+}
+
+@media (max-width: 768px) {
+    h1 {
+        font-size: 2rem;
+    }
+
+    #gameList {
+        grid-template-columns: 1fr;
+        padding: 20px;
+        height: auto;
+        overflow-y: auto;
+    }
+    
+    body {
+        overflow-y: auto;
+    }
+
+    .game-card h2 {
+        font-size: 1.2rem;
+    }
+}
+
+@media (max-width: 480px) {
+    h1 {
+        font-size: 1.8rem;
+    }
+
+    header {
+        padding: 1rem;
+    }
+
+    #gameList {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+} 

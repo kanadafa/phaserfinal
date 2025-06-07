@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Mistery Gallery</title>
+  <link rel="icon" type="image/png" href="./Images/logo.png">
+  <style>
+    body {
+      margin: 0;
+      background-color: #000;
+      position: relative;
+    }
+
+    video {
+      width: 100vw;
+      height: 100vh;
+      object-fit: cover;
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 0;
+    }
+
+    .button-group {
+      position: absolute;
+      top: 85vh;
+      left: 85%;
+      transform: translateX(-50%);
+      display: none;
+      align-items: center;
+      gap: 30px;
+      z-index: 10;
+    }
+
+    button {
+      padding: 15px;
+      font-size: 20px;
+      background: #5e503f;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <audio id="bgm" src="./Audios/bg_pass.mp3" autoplay loop></audio>
+
+  <video id="passVideo" autoplay playsinline>
+    <source src="./Vedios/pass1.mp4" type="video/mp4">
+  </video>
+
+  <div class="button-group" id="buttonGroup">
+    <button onclick="location.href='gallery.html'">回到畫廊</button>
+    <button onclick="location.href='play2.html'">繼續挑戰</button>
+  </div>
+
+  <script>
+    const video = document.getElementById("passVideo");
+    const buttonGroup = document.getElementById("buttonGroup");
+
+    video.addEventListener("ended", () => {
+      localStorage.setItem("level1Cleared", "true");
+      buttonGroup.style.display = "flex";
+    });
+
+    document.addEventListener("click", () => {
+      const bgm = document.getElementById("bgm");
+      if (bgm.paused) {
+        bgm.play();
+      }
+    });
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Mistery Gallery</title>
+  <link rel="icon" type="image/png" href="./Images/logo.png"/>
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .home, .video-container {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+    }
+
+    .bg {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .start, .exit {
+      position: absolute;
+      width: 300px;
+      cursor: pointer;
+      left: 65%;
+      transform: translateX(-50%);
+    }
+
+    .start {
+      bottom: 30%;
+    }
+
+    .exit {
+      bottom: 15%;
+    }
+
+    .video-container {
+      display: none;
+      background-color: black;
+      justify-content: center;
+      align-items: center;
+    }
+
+    video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  </style>
+</head>
+<body>
+  <div class="home" id="homePage">
+    <img src="./Images/home.jpg" class="bg" />
+    <img src="./Images/btn_start.png" class="start" onclick="playIntroVideo()" />
+    <img src="./Images/btn_exit.png" class="exit" onclick="closeGame()" />
+  </div>
+
+  <div class="video-container" id="videoContainer">
+    <video id="introVideo" autoplay>
+      <source src="./Vedios/intro.mp4" type="video/mp4" />
+      Your browser does not support the video tag.
+    </video>
+  </div>
+
+  <script>
+    localStorage.clear();
+
+    function playIntroVideo() {
+      document.getElementById("homePage").style.display = "none";
+      document.getElementById("videoContainer").style.display = "flex";
+
+      const video = document.getElementById("introVideo");
+      video.volume = 0.5;
+      video.play();
+
+      video.onended = function () {
+        window.location.href = "gallery.html";
+      };
+    }
+
+    function closeGame() {
+      window.location.href = "exit.html";
+    }
+  </script>
+</body>
+</html>

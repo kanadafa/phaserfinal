@@ -1,0 +1,2333 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8" />
+  <title>Phaser UI Example</title>
+  <script src="./asset/phaser@3.55.2.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fontfaceobserver/2.1.0/fontfaceobserver.standalone.js"></script>
+  <!-- 引入 FontFaceObserver -->
+  <!-- <script src="https://ajax.googleapis.com/ajax/libs/webfont/1.6.26/webfont.js"></script> -->
+</head>
+
+<body>
+
+  <style>
+    @font-face {
+      font-family: 'a';
+      src: url('asset/fonts/Cubic_11.woff') format('woff');
+
+    }
+
+
+    body {
+      margin: 0;
+      background-color: #000;
+      /* 可自訂背景顏色 */
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      /* 滿版垂直 */
+    }
+
+    canvas {
+      display: block;
+    }
+  </style>
+  <script>
+
+
+
+    // 背景音樂--------------------------------------------------------------------------------------------------------------------------------------------------
+    class BootScene extends Phaser.Scene {
+      constructor() {
+        super({ key: 'BootScene', active: true });
+      }
+
+      preload() {
+        // 載入背景音樂
+        this.load.audio('bgm', 'asset/audio/bgm.mp3');
+      }
+
+      create() {
+        // 播放並循環
+        this.sound.play('bgm', { loop: true, volume: 1 });
+        // 啟動主選單場景
+        this.scene.launch('MenuScene');
+      }
+    }
+    // 主選單場景--------------------------------------------------------------------------------------------------------------------------------------------------
+    class MenuScene extends Phaser.Scene {
+      constructor() {
+        super({ key: 'MenuScene' });
+      }
+
+      preload() {
+        // this.load.script('webfont', 'https://ajax.googleapis.com/ajax/libs/webfont/1.6.26/webfont.js');
+
+
+
+        this.load.audio('btnselect', 'asset/audio/select07.mp3');
+        this.load.audio('clickselect', 'asset/audio/click.mp3');
+        this.load.image('bg', 'asset/menu/bg.jpg');
+        this.load.image('btn_start', 'asset/menu/btn_start.png');
+        this.load.image('btn_setting', 'asset/menu/btn_setting.png');
+        this.load.image('btn_exit', 'asset/menu/btn_exit.png');
+        this.load.video('home', 'asset/video/home.mp4', 'loadeddata', false, true);
+      }
+
+      create() {
+        // 1. 加影片當背景
+        const homeVideo = this.add.video(400, 300, 'home')
+          .setDisplaySize(800, 600)
+          .setDepth(0)
+          .setAlpha(0.65);
+        homeVideo.setMute(true);
+
+        // 2. 狀態
+        const rawVideo = homeVideo.video;
+        let reverseInterval = null;
+
+        // 3. 影片倒播控制
+        function startReverse() {
+          rawVideo.pause();
+          setTimeout(() => {
+            reverseInterval = setInterval(() => {
+              if (rawVideo.currentTime <= 0.04) {
+                clearInterval(reverseInterval);
+                // 到頭後暫停再正播
+                setTimeout(() => {
+                  rawVideo.currentTime = 0.01;
+                  rawVideo.play();
+                }, 500); // 停 0.5 秒
+              } else {
+                rawVideo.currentTime -= 1 / 45; // 越大越快
+              }
+            }, 1000 / 45);
+          }, 500); // 停 0.5 秒
+        }
+
+        // 4. 正播到尾觸發倒播
+        rawVideo.addEventListener('ended', startReverse);
+
+        // 5. 一開始正播（不 loop）
+        rawVideo.currentTime = 0.01;
+        homeVideo.play(false);
+
+        // 6. 清理 interval，防止重進場景疊加
+        this.events.on('shutdown', () => {
+          if (reverseInterval) clearInterval(reverseInterval);
+          rawVideo.removeEventListener('ended', startReverse);
+        });
+
+        // WebFont.load({
+        //     google: {
+        //         families: ['Press Start 2P'] // 這是範例字體，可以換成你想要的
+        //     },
+        //     active: () => {
+        //         this.add.text(100, 100, 'Fewqoj ', {
+        //             fontFamily: '"Press Start 2P"',
+        //             fontSize: '20px',
+        //             color: '#ffffff'
+        //         });
+        //     }
+        // });
+
+        const overSound = this.sound.add('btnselect');
+
+        this.input.on('gameobjectover', (pointer, gameObject) => {
+          overSound.play();
+          // 你可以在這裡判斷是哪顆按鈕再做場景切換等行為：
+          // if (gameObject === btn1) this.scene.start('ModeScene');
+          // else if (gameObject === btn2) …
+        });
+
+        const clickSound = this.sound.add('clickselect');
+
+        this.input.on('gameobjectdown', (pointer, gameObject) => {
+          clickSound.play();
+          // 你可以在這裡判斷是哪顆按鈕再做場景切換等行為：
+          // if (gameObject === btn1) this.scene.start('ModeScene');
+          // else if (gameObject === btn2) …
+        });
+
+
+
+        // 使用 FontFaceObserver 確保字體加載完成
+        function addLetterSpacing(text, spacing = '\u200A') {
+          return text.split('').join(spacing);
+        }
+
+        const font = new FontFaceObserver('a');
+        font.load().then(() => {
+          let spaced = addLetterSpacing('獵人X蘋果', '\u200A'); // 調整 spacing 字元
+          let text = this.add.text(this.cameras.main.centerX, 150, spaced, {
+            fontFamily: 'a',
+            fontSize: '64px',
+            //color: '#ffffff'
+          });
+          text.setOrigin(0.5);
+
+          text.setTintFill(
+            0xff0000, // 左上 → 紅色
+            0xffff00, // 右上 → 黃色
+            0xff6600, // 左下 → 橘色
+            0xffffff  // 右下 → 白色
+          );
+        });
+
+
+
+        // Start 按鈕
+        const startButton = this.add.image(400, 250, 'btn_start')
+          .setOrigin(0.5)
+          .setScale(0.35)
+          .setInteractive({ useHandCursor: true });
+
+
+        startButton.on('pointerover', () => {
+          startButton.setScale(0.38); // 放大一點
+        });
+
+        startButton.on('pointerout', () => {
+          startButton.setScale(0.35); // 還原
+        });
+
+        startButton.on('pointerover', () => {
+          startButton.setAlpha(0.8);
+        });
+
+        startButton.on('pointerout', () => {
+          startButton.setAlpha(1);
+        });
+
+        startButton.on('pointerdown', () => {
+          console.log('顯示開始');
+          this.scene.start('StoryScene');
+        });
+
+        // Setting 按鈕
+        const settingButton = this.add.image(400, 400, 'btn_setting')
+          .setOrigin(0.5)
+          .setScale(0.35)
+          .setInteractive({ useHandCursor: true });
+
+        settingButton.on('pointerover', () => {
+          settingButton.setScale(0.38); // 放大一點
+        });
+
+        settingButton.on('pointerout', () => {
+          settingButton.setScale(0.35); // 還原
+        });
+
+        settingButton.on('pointerover', () => {
+          settingButton.setAlpha(0.8);
+        });
+
+        settingButton.on('pointerout', () => {
+          settingButton.setAlpha(1);
+        });
+
+        settingButton.on('pointerdown', () => {
+          console.log('顯示設定');
+          this.scene.start('SettingScene');
+        });
+
+        // Exit 按鈕
+        const exitButton = this.add.image(400, 550, 'btn_exit')
+          .setOrigin(0.5)
+          .setScale(0.35)
+          .setInteractive({ useHandCursor: true });
+
+        exitButton.on('pointerover', () => {
+          exitButton.setScale(0.38); // 放大一點
+        });
+
+        exitButton.on('pointerout', () => {
+          exitButton.setScale(0.35); // 還原
+        });
+
+        exitButton.on('pointerover', () => {
+          exitButton.setAlpha(0.8);
+        });
+
+        exitButton.on('pointerout', () => {
+          exitButton.setAlpha(1);
+        });
+
+        exitButton.on('pointerdown', () => {
+          console.log('顯示離開');
+          window.close();
+        });
+
+      }
+
+      update() {
+      }
+    }
+
+
+    //-----------------
+    const storyText = [
+      "在遙遠的森林深處，有一棵巨大的蘋果樹，這棵巨樹聳立在萬年古林中。",
+      "每當蘋果成熟時，樹上會掉落閃亮的金色蘋果，傳聞它的果實每吃一顆就能延壽一年。",
+      "運氣好甚至可能會遇見更稀有的彩虹蘋果，吃下去能得永生。",
+      "這些蘋果吸引了無數冒險者和尋寶獵人的目光。",
+      "你是一名年輕的尋寶獵人，決定深入森林，冒險尋找這棵神奇的蘋果樹。",
+      "當你運氣好成功找到了，正想依靠它發家致富時",
+      "卻遭遇許多危機",
+      "有大老鷹很蟒蛇等著你，甚至是惡劣的天氣",
+      "你冒著生命危險闖入森林深處，是死也要成功把傳說中的彩虹蘋果帶回去。"
+    ];
+
+    const endstoryText = [
+      "最終，",
+      "你戰勝巨鷹、巨蟒與惡劣天候，",
+      "摘下彩虹蘋果；蘋果迸發光芒，",
+      "重啟大地生機。",
+      "你帶着奇蹟歸來，",
+      "，成為世人景仰的永恆傳奇。"
+
+    ];
+
+    class StoryScene extends Phaser.Scene {
+      constructor() {
+        super({ key: 'StoryScene' });
+      }
+
+      preload() {
+        this.load.image('bg', 'asset/menu/bg.png');
+      }
+
+      create() {
+        const { width, height } = this.sys.game.config;
+
+        // 背景圖
+        this.add.image(width / 2, height / 2, 'bg')
+          .setDisplaySize(width, height)
+          .setAlpha(0.7);
+
+        // 矩形參數
+        const rectWidth = width - 100;
+        const rectHeight = height * 0.7;
+        const rectX = width / 2;
+        const rectY = height / 2;
+        const padding = 5;
+
+        // 背景框（置中）
+        this.add.rectangle(rectX, rectY, rectWidth, rectHeight, 0x000000, 0.6)
+          .setOrigin(0.5);
+
+        // 建立遮罩
+        const maskG = this.make.graphics();
+        maskG.fillRect(
+          rectX - rectWidth / 2,
+          rectY - rectHeight / 2,
+          rectWidth,
+          rectHeight
+        );
+        const mask = maskG.createGeometryMask();
+
+        // 全文合併
+        this.fullText = storyText.join(' ');
+
+        // 文字物件
+        this.text = this.add.text(
+          rectX - rectWidth / 2 + padding,
+          rectY - rectHeight / 2 + padding,
+          '',
+          {
+            fontFamily: 'a',
+            fontSize: '24px',
+            color: '#ffffff',
+            wordWrap: {
+              width: rectWidth - padding * 2,
+              useAdvancedWrap: true
+            }
+          }
+        )
+          .setOrigin(0, 0)
+          .setMask(mask);
+
+        // 底部提示文字
+        this.add.text(width / 2, height - 20, '按 SPACE 鍵跳過', {
+          fontFamily: 'a',
+          fontSize: '36px',
+          color: '#ffffff'
+        })
+          .setOrigin(0.5, 1);
+
+        // 打字特效初始化
+        this.charIndex = 0;
+        this.typeNextChar();
+
+        // 用 Space 鍵跳過
+        this.input.keyboard.on('keydown-SPACE', () => this.skipStory());
+      }
+
+      typeNextChar() {
+        this.charIndex++;
+        this.text.setText(this.fullText.substr(0, this.charIndex));
+
+        if (this.charIndex < this.fullText.length) {
+          this.time.delayedCall(40, () => this.typeNextChar());
+        } else {
+          this.time.delayedCall(1500, () => {
+            this.scene.start('ModeScene');
+          });
+        }
+      }
+
+      skipStory() {
+        // 取消所有延遲事件
+        this.time.removeAllEvents();
+        // 直接進入下一場景
+        this.scene.start('ModeScene');
+      }
+    }
+    // 模式場景-------------------------------------------------------------------------------------------------------------------------------------
+    class ModeScene extends Phaser.Scene {
+      constructor() {
+        super({ key: 'ModeScene' });
+      }
+
+      preload() {
+        // 加載按鈕選擇音效
+        this.load.audio('btnselect', 'asset/audio/select07.mp3');
+        this.load.audio('clickselect', 'asset/audio/click.mp3');
+
+        // 加載按鈕、背景圖
+        this.load.image('single', 'asset/menu/playmode/single.png');
+        this.load.image('mulit', 'asset/menu/playmode/mulit.png');
+        this.load.image('back', 'asset/back.png');
+        this.load.image('modebg', 'asset/menu/modebg.jpeg');
+      }
+
+      create() {
+        const W = this.scale.width;
+        const H = this.scale.height;
+
+        // ───────────────────────────────────────────
+        // 1) 先把背景圖放在最底層 (depth = 0)，並設定它的顯示大小為整個畫面
+        this.add
+          .image(W / 2, H / 2, 'modebg')
+          .setDisplaySize(W, H)
+          .setDepth(0);
+        this.helpTexts = [
+          // 第一段：P1 / P2 控制方式
+          '【 P1模式 控制方式 】\n\n' +
+          '← / →  ←→ 移動\n' +
+          '↑        跳躍\n' +
+          '↓        趴下\n\n' +
+          '【  P2模式 控制方式 】\n\n' +
+          'A / D  ←→ 移動\n' +
+          'W        跳躍\n' +
+          'S        趴下\n\n' +
+          '按任意鍵或點擊，繼續下一段說明',
+
+          // 第二段：遊戲目標介紹（可自行調整內容）
+          '【 遊戲目標 】\n\n' +
+          ' 每關卡限時60秒 \n\n' +
+          '【 P1模式 】過關標準分別100、150、200 \n\n' +
+
+          '【 P2模式 】比誰的分數比較多 \n\n',
+          // 第三段：注意事項（最後一段 → 按下就開始遊戲）
+          '【 注意事項 】\n\n' +
+          '1.🍎的種類不同會加分與扣分。\n\n' +
+          '2.🐍要隨時注意綠綠長長(-15)。\n\n' +
+          '3.🦅小心飛過頭上(-20)。\n\n' +
+          '按任意鍵或點擊，開始遊戲～'
+        ];
+
+        // 2) 設定目前顯示到哪一段
+        this.currentHelpIndex = 0;
+
+        // 3) 建立全螢幕半透明遮罩
+        this.overlay = this.add
+          .rectangle(0, 0, W, H, 0x000000, 0.7)
+          .setOrigin(0)
+          .setDepth(1000);
+
+        // 4) 建立第一段說明文字
+        this.helpText = this.add
+          .text(
+            W / 2,
+            H / 2,
+            this.helpTexts[this.currentHelpIndex],
+            {
+              fontFamily: 'a',
+              fontSize: '28px',
+              color: '#ffffff',
+              align: 'center',
+              wordWrap: { width: W * 0.8, useAdvancedWrap: true }
+            }
+          )
+          .setOrigin(0.5)
+          .setDepth(1001);
+
+        // 5) 綁定一次性的鍵盤＆點擊事件：每按一次就呼叫 showNextHelp()
+        this.input.keyboard.once('keydown', () => {
+          this.showNextHelp();
+        });
+        this.input.once('pointerdown', () => {
+          this.showNextHelp();
+        });
+      }
+
+      // ───────────────────────────────────────────
+      // 將使用者按鍵或點擊後，要顯示下一段文字或關閉遮罩
+      showNextHelp() {
+        // 增加索引，指向下一段
+        this.currentHelpIndex++;
+
+        // 如果還沒到最後一段，就更新文字並重新綁定一次性事件
+        if (this.currentHelpIndex < this.helpTexts.length) {
+          // 更新文字內容
+          this.helpText.setText(this.helpTexts[this.currentHelpIndex]);
+
+          // 重新綁定：下一次按任意鍵或點擊還是呼叫 showNextHelp()
+          this.input.keyboard.once('keydown', () => {
+            this.showNextHelp();
+          });
+          this.input.once('pointerdown', () => {
+            this.showNextHelp();
+          });
+        }
+        // 如果已經超過最後一段，代表上一段按下之後就要關閉所有遮罩，並顯示按鈕
+        else {
+          // 銷毀遮罩與文字
+          this.overlay.destroy();
+          this.helpText.destroy();
+
+          // 呼叫顯示按鈕的方法
+          this.showModeButtons();
+        }
+      }
+
+      // ───────────────────────────────────────────
+      // 所有遮罩說明完成之後，才跑這裡：顯示背景、按鈕，以及設定互動行為＆音效
+      showModeButtons() {
+        const W = this.scale.width;
+        const H = this.scale.height;
+
+        // 1) 加載音效（把原先 preload 的音效取出）
+        const overSound = this.sound.add('btnselect');
+        const clickSound = this.sound.add('clickselect');
+
+        // 2) 先顯示一張背景（半透明）
+        //    你可以自行調整位置與大小
+        const bgmodebg = this.add
+          .image(W / 2, H / 2, 'modebg')
+          .setDisplaySize(W, H)
+          .setAlpha(0.7)
+          .setDepth(0);
+
+        // 3) 當滑鼠移到任何可互動 GameObject 上，就播放 hover 音效
+        this.input.on('gameobjectover', (pointer, gameObject) => {
+          overSound.play();
+        });
+
+        // 4) 當按下任何可互動 GameObject 時，就播放 click 音效
+        this.input.on('gameobjectdown', (pointer, gameObject) => {
+          clickSound.play();
+        });
+
+        // ─────────────────────────────────────────
+        // 5) 建立「返回」按鈕
+        const backButton = this.add
+          .image(50, 50, 'back')
+          .setOrigin(0.5)
+          .setScale(0.075)
+          .setInteractive({ useHandCursor: true });
+
+        backButton.on('pointerover', () => {
+          backButton.setScale(0.08);
+          backButton.setAlpha(0.8);
+        });
+        backButton.on('pointerout', () => {
+          backButton.setScale(0.075);
+          backButton.setAlpha(1);
+        });
+        backButton.on('pointerdown', () => {
+          // 按下「返回」時，跳轉回 MenuScene
+          this.scene.start('MenuScene');
+        });
+
+        // ─────────────────────────────────────────
+        // 6) 建立「Single」按鈕
+        const singleButton = this.add
+          .image(W / 2, H / 2 - 50, 'single') // 你可以自行調整 Y 座標
+          .setOrigin(0.5)
+          .setScale(0.35)
+          .setInteractive({ useHandCursor: true });
+
+        singleButton.on('pointerover', () => {
+          singleButton.setScale(0.38);
+          singleButton.setAlpha(0.8);
+        });
+        singleButton.on('pointerout', () => {
+          singleButton.setScale(0.35);
+          singleButton.setAlpha(1);
+        });
+        singleButton.on('pointerdown', () => {
+          // 按下 Single 模式 → 跳到 single_1Scene
+          this.scene.start('single_1Scene');
+        });
+
+        // ─────────────────────────────────────────
+        // 7) 建立「Multiplayer」按鈕
+        const mulitButton = this.add
+          .image(W / 2, H / 2 + 100, 'mulit') // 你可以自行調整 Y 座標
+          .setOrigin(0.5)
+          .setScale(0.37)
+          .setInteractive({ useHandCursor: true });
+
+        mulitButton.on('pointerover', () => {
+          mulitButton.setScale(0.40);
+          mulitButton.setAlpha(0.8);
+        });
+        mulitButton.on('pointerout', () => {
+          mulitButton.setScale(0.37);
+          mulitButton.setAlpha(1);
+        });
+        mulitButton.on('pointerdown', () => {
+          // 按下 Multiplayer 模式 → 跳到 MulitLevelSelectScene
+          this.scene.start('MulitLevelSelectScene');
+        });
+      }
+    }
+
+    // 多人選擇關卡場景--------------------------------------------------------------------------------------------------------------------------------------------------
+    class MulitLevelSelectScene extends Phaser.Scene {
+      constructor() {
+        super({ key: 'MulitLevelSelectScene' });
+      }
+      preload() {
+        this.load.image('level_select_bg', 'asset/menu/bg.jpg');
+        // 加載音效
+        this.load.audio('btnselect', 'asset/audio/select07.mp3');
+        this.load.audio('clickselect', 'asset/audio/click.mp3');
+      }
+      create() {
+        // 音效
+        const overSound = this.sound.add('btnselect');
+        const clickSound = this.sound.add('clickselect');
+
+        // 半透明遮罩
+        this.add.rectangle(400, 300, 800, 600, 0x000000, 0.7).setOrigin(0.5);
+
+        // 可加一個背景
+        this.add.image(400, 300, 'level_select_bg').setDisplaySize(800, 600).setAlpha(0.4);
+
+        // 主標題
+        this.add.text(400, 100, '選擇多人關卡', {
+          fontFamily: 'a',
+          fontSize: '48px',
+          color: '#ffff00'
+        }).setOrigin(0.5);
+
+        // 關卡按鈕們
+        const buttonData = [
+          { y: 220, label: '關卡 1', scene: 'Level1Scene_mulit' },
+          { y: 330, label: '關卡 2', scene: 'Level2Scene_mulit' },
+          { y: 440, label: '關卡 3', scene: 'Level3Scene_mulit' }
+        ];
+        buttonData.forEach(({ y, label, scene }) => {
+          const btn = this.add.rectangle(400, y, 300, 80, 0xffffff, 1)
+            .setStrokeStyle(4, 0xff0000)
+            .setInteractive({ useHandCursor: true });
+          const text = this.add.text(400, y, label, {
+            fontFamily: 'a',
+            fontSize: '36px',
+            color: '#000'
+          }).setOrigin(0.5);
+
+          btn.on('pointerover', () => {
+            btn.setFillStyle(0xffcc00, 1);
+            btn.setStrokeStyle(6, 0xff6600);
+            overSound.play();
+          });
+          btn.on('pointerout', () => {
+            btn.setFillStyle(0xffffff, 1);
+            btn.setStrokeStyle(4, 0xff0000);
+          });
+          btn.on('pointerdown', () => {
+            clickSound.play();
+            this.scene.start(scene);
+          });
+        });
+
+        // 返回鈕
+        const backBtn = this.add.text(400, 540, '返回', {
+          fontFamily: 'a',
+          fontSize: '28px',
+          color: '#ff0000',
+          backgroundColor: '#fff'
+        }).setOrigin(0.5).setPadding(20, 8, 20, 8).setInteractive({ useHandCursor: true });
+
+        backBtn.on('pointerover', () => {
+          backBtn.setStyle({ backgroundColor: '#ffc' });
+          overSound.play();
+        });
+        backBtn.on('pointerout', () => backBtn.setStyle({ backgroundColor: '#fff' }));
+        backBtn.on('pointerdown', () => {
+          clickSound.play();
+          this.scene.start('ModeScene');
+        });
+      }
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+    // 單機關卡共用邏輯-----------------------------------------------------------------------------
+    class BaseLevelScene extends Phaser.Scene {
+      constructor(key, config) {
+        super({ key });
+        this.levelConfig = Object.assign({
+          backgroundKey: '',
+          timeLimit: 60,
+          passScore: 0,
+          nextScene: null,
+          showSnake: false,
+          showEagle: false
+        }, config);
+      }
+
+      preload() {
+        // 共用資源
+        this.load.image('gr', 'asset/ground.png');
+        this.load.image('black', 'asset/fruits/black.png');
+        this.load.image('red', 'asset/fruits/red.png');
+        this.load.image('gold', 'asset/fruits/gold.png');
+        this.load.image('colorful', 'asset/fruits/colorful.png');
+        this.load.spritesheet('player1', 'asset/player1.png', { frameWidth: 900, frameHeight: 472 });
+
+        this.load.image('btnRestart', 'asset/reset.png');
+        this.load.image('btnReturn', 'asset/home.png');
+        this.load.image('btnNext', 'asset/next.png');
+        this.load.audio('btnselect1', 'asset/audio/select07.mp3');
+        this.load.audio('clickselect1', 'asset/audio/click.mp3');
+        this.load.audio('eatapple', 'asset/audio/eatapple.mp3');
+      }
+
+      init(data) {
+        // single 或 multi
+        this.mode = data.mode || 'single';
+      }
+
+      create() {
+
+        this.btnSelectSound = this.sound.add('btnselect1');
+        this.clickSelectSound = this.sound.add('clickselect1');
+
+        this.eatapple = this.sound.add('eatapple', { volume: this.game.sound.volume });
+
+        // 重置遊戲狀態，讓多次失敗都能再次顯示結束畫面
+        this.isGameOver = false;
+        // 確保輸入重新啟用（特別是鍵盤與滑鼠）
+        this.input.enabled = true;
+        // 背景
+        this.add.image(400, 300, this.levelConfig.backgroundKey).setDisplaySize(800, 600);
+
+        // 地面
+        this.ground = this.physics.add.staticImage(
+          this.scale.width / 2,
+          this.scale.height - 1,
+          'gr'
+        )
+          .setDisplaySize(this.scale.width, 40)
+          .setOrigin(0.5, 1)
+          .refreshBody();
+
+        // 2. 建角色，原點改成中間下方 (0.5, 1)
+        this.player = this.physics.add
+          .sprite(400, 0, 'player1')
+          .setScale(0.3)
+          .setOrigin(0.5, 1)               // ← 把原點設在腳底
+          .setCollideWorldBounds(true);
+
+        // 3. 把角色 y 抓到地板頂端位置
+        //    ground.y 就是地板底邊 (因為 origin.y = 1)，
+        //    再往上 40px（地板高度）就是地板「頂端」。
+        //    用這個值直接當腳底 y
+        this.player.y = this.ground.y - this.ground.displayHeight;
+
+
+
+        // 5. 加入碰撞
+        this.physics.add.collider(this.player, this.ground);
+
+        // 調整玩家碰撞區域
+        this.player.body.setSize(260, 0);
+        this.player.body.setOffset(380, 0); // 根據縮放後的尺寸調整
+
+
+
+
+
+
+
+
+
+
+
+        this.cursors = this.input.keyboard.createCursorKeys();
+        this.createAnimations();
+
+        // 分數與時間
+        this.score = 0;
+        this.timeLeft = this.levelConfig.timeLimit;
+        this.rainbowDropped = false;
+        this.scoreText = this.add.text(16, 16, 'Score: 0', {
+          fontFamily: 'a',
+          fontSize: '36px',
+          color: '#ff0000',
+          strokeThickness: 2
+        });
+        this.timerText = this.add.text(650, 16, 'Time: ' + this.timeLeft, {
+          fontFamily: 'a',
+          fontSize: '36px',
+          color: '#ffa500',
+          strokeThickness: 2
+        });
+        this.timer = this.time.addEvent({ delay: 1000, callback: this.updateTimer, callbackScope: this, loop: true });
+
+        // 掉落物
+        this.fruits = this.physics.add.group();
+        this.spawnEvent = this.time.addEvent({ delay: 800, callback: this.spawnFruit, callbackScope: this, loop: true });
+        this.physics.add.overlap(this.player, this.fruits, this.collectFruit, null, this);
+
+        // 老鷹
+        if (this.levelConfig.showEagle) {
+          this.eagles = this.physics.add.group();
+          this.time.addEvent({ delay: 10000, callback: this.spawnEagle, callbackScope: this, loop: true });
+          this.physics.add.overlap(this.player, this.eagles, this.hitEagle, null, this);
+        }
+
+        // 蛇
+        if (this.levelConfig.showSnake) {
+          this.isSnakeActive = false;
+          this.time.delayedCall(10000, this.spawnSnake, null, this);
+        }
+
+        this.isPaused = false;
+        this.pauseOverlay = null;
+
+        this.input.keyboard.on('keydown-ESC', () => {
+          this.isPaused ? this.resumeGame() : this.pauseGame();
+        });
+
+
+
+
+
+
+
+      }
+
+      update() {
+
+        if (this.isPaused) return;
+
+        if (Phaser.Input.Keyboard.JustDown(this.cursors.up) && this.player.body.blocked.down) {
+          this.player.setVelocityY(-350);       // 調整跳躍力道
+          // 跳過後面左右/蹲下邏輯
+        }
+
+        // 2️⃣ 先把水平速度歸零
+        this.player.setVelocityX(0);
+
+
+
+
+        const speed = 300 * (this.player.isSlowed ? 0.6 : 1);
+
+        // 1. 先處理左右移動，並記錄最後一次按的方向
+        if (this.cursors.left.isDown) {
+          this.player.setVelocityX(-speed);
+          this.lastDirection = 'left';
+        } else if (this.cursors.right.isDown) {
+          this.player.setVelocityX(speed);
+          this.lastDirection = 'right';
+        } else {
+          this.player.setVelocityX(0);
+        }
+
+        // 2. 若正在按「下」就優先做蹲下
+        if (this.cursors.down.isDown) {
+          // 停止水平移動
+          this.player.setVelocityX(0);
+          // 播 lie 動畫
+          this.player.anims.play('lie', true);
+          // 根據最後方向水平翻轉
+          this.player.setFlipX(this.lastDirection === 'left');
+          return;    // 不再執行後面的走路/待機動畫
+        }
+
+        // 3. 走路 / 待機
+        if (this.player.body.velocity.x < 0) {
+          // 往左走
+          this.player.anims.play('walk_left', true);
+          this.player.setFlipX(false);  // walk_left 已經是左向，不需要再翻
+        }
+        else if (this.player.body.velocity.x > 0) {
+          // 往右走
+          this.player.anims.play('walk_right', true);
+          this.player.setFlipX(false);
+        }
+        else {
+          // 待機
+          this.player.anims.play('ready', true);
+          // 待機貼圖也要跟方向一致
+          this.player.setFlipX(this.lastDirection === 'left');
+        }
+
+
+
+        // 蛇邊界反彈
+        // 根據水平速度翻轉蛇的貼圖
+        if (this.snake && this.snake.body && this.snake.body.velocity) {
+          if (this.snake.body.velocity.x > 0) {
+            this.snake.setFlipX(true);
+          } else if (this.snake.body.velocity.x < 0) {
+            this.snake.setFlipX(false);
+          }
+        }
+
+
+        // 清理飛出畫面老鷹
+        if (this.eagles) {
+          this.eagles.getChildren().forEach(eagle => {
+            if (eagle.x < -50 || eagle.x > this.scale.width + 50) {
+              eagle.destroy();
+            }
+          });
+        }
+      }
+
+      createAnimations() {
+        this.anims.create({ key: 'walk_left', frames: this.anims.generateFrameNumbers('player1', { start: 0, end: 3 }), frameRate: 8, repeat: -1 });
+        this.anims.create({ key: 'ready', frames: [{ key: 'player1', frame: 4 }], frameRate: 1, repeat: -1 });
+        this.anims.create({ key: 'walk_right', frames: this.anims.generateFrameNumbers('player1', { start: 5, end: 8 }), frameRate: 8, repeat: -1 });
+        this.anims.create({ key: 'lie', frames: this.anims.generateFrameNumbers('player1', { start: 9, end: 9 }), frameRate: 8, repeat: -1 });
+
+        if (this.levelConfig.showEagle) {
+          this.anims.create({ key: 'eagle', frames: this.anims.generateFrameNumbers('eagle', { start: 0, end: 8 }), frameRate: 9, repeat: -1 });
+        }
+        if (this.levelConfig.showSnake) {
+          this.anims.create({ key: 'snake_move', frames: this.anims.generateFrameNumbers('snake', { start: 0, end: 4 }), frameRate: 6, repeat: -1 });
+        }
+
+
+      }
+
+      updateTimer() {
+        this.timeLeft--;
+        this.timerText.setText('Time: ' + this.timeLeft);
+        if (this.timeLeft <= 0) {
+          this.timer.remove(false);
+          this.spawnEvent.remove(false);
+          this.endLevel();
+        }
+      }
+
+      spawnFruit() {
+        const x = Phaser.Math.Between(50, 750);
+        const rand = Math.random();
+        let type;
+        if (rand < 0.5) type = 'red';
+        else if (rand < 0.7) type = 'black';
+        else if (rand < 0.95) type = 'gold';
+        else if (!this.rainbowDropped) { type = 'colorful'; this.rainbowsDropped = true; }
+        else type = 'red';
+        const fruit = this.fruits.create(x, 0, type).setScale(0.05);
+        fruit.type = type;
+        fruit.setVelocityY(150);
+      }
+
+      collectFruit(player, fruit) {
+        fruit.destroy();
+
+        this.eatapple.play({ volume: this.game.sound.volume });
+        switch (fruit.type) {
+          case 'red': this.score += 2; break;
+          case 'gold': this.score += 10; break;
+          case 'colorful': this.score += 100; break;
+          case 'black': this.score -= 10; break;
+        }
+        this.scoreText.setText('Score: ' + this.score);
+      }
+
+      spawnEagle() {
+        const { width } = this.scale;
+        const y = 400;
+        const fromLeft = Phaser.Math.Between(0, 1) === 0;
+        const x = fromLeft ? -50 : width + 50;
+        const speed = 200 * (fromLeft ? 1 : -1);
+        const eagle = this.eagles.create(x, y, 'eagle').setOrigin(0.5).setScale(1).setDepth(50);
+        eagle.body.allowGravity = false;
+        eagle.setVelocityX(speed);
+        eagle.setFlipX(!fromLeft);
+        eagle.play('eagle');
+      }
+
+      spawnSnake() {
+        this.snake = this.physics.add
+          .sprite(50, 0, 'snake')
+          .setOrigin(0.5, 1)
+          .setScale(0.35)
+          .setCollideWorldBounds(true)   // 啟用世界邊界碰撞
+          .setBounce(1, 0);              // 水平彈力 1，垂直彈力 0
+
+        const floorTopY = this.ground.y - this.ground.displayHeight;
+        this.snake.y = floorTopY;
+        this.snake.body.setSize(300, 80);
+        this.snake.body.setOffset(-this.snake.displayWidth / 2 + 100, -this.snake.displayHeight + 100);
+
+        this.physics.add.collider(this.snake, this.ground);
+        this.snake.play('snake_move');
+        this.snake.setVelocityX(100);
+        this.snake.setFlipX(false);
+        this.physics.add.overlap(this.player, this.snake, this.hitSnake, null, this);
+
+
+      }
+
+      hitSnake(player, snake) {
+        if (this.isHit) return;
+        this.isHit = true;
+        player.setTint(0xff0000);
+        this.time.delayedCall(1000, () => {
+          this.score -= 15;
+          this.scoreText.setText('Score: ' + this.score);
+          player.clearTint();
+          this.isHit = false;
+        });
+      }
+
+      hitEagle(player, eagle) {
+        // 如果玩家趴下，就不算碰撞
+        if (this.cursors.down.isDown) {
+          return;
+        }
+
+        eagle.destroy();
+        this.score -= 20;
+        this.scoreText.setText('Score: ' + this.score);
+        player.setTint(0x4b0082);
+        this.time.delayedCall(200, () => player.clearTint());
+      }
+
+      endLevel() {
+        console.log('執行 endLevel()');
+        if (this.isGameOver) return;
+        this.isGameOver = true;
+
+        // 暫停物理世界、動畫、雨滴…
+        this.physics.pause();
+        if (this.rainEmitter) this.rainEmitter.stop();
+        if (this.player?.anims) this.player.anims.stop();
+        this.eagles?.getChildren().forEach(e => e.anims.stop());
+        this.snake?.anims.stop();
+
+        const W = this.scale.width;
+        const H = this.scale.height;
+
+        // 半透明遮罩
+        this.add.rectangle(0, 0, W, H, 0x000000, 0.7)
+          .setOrigin(0)
+          .setDepth(100);
+
+        // 過/失敗主訊息
+        const passed = this.score >= this.levelConfig.passScore;
+        const msg = passed ? '過 關 ！' : '失 敗 ！';
+        const color = passed ? '#00ff00' : '#ff0000';
+        this.add.text(W / 2, H / 2 - 120, msg, {
+          fontFamily: 'a',
+          fontSize: '64px',
+          color,
+          stroke: '#000',
+          strokeThickness: 4
+        })
+          .setOrigin(0.5)
+          .setDepth(101);
+
+        // —— 新增：在右邊顯示最終分數 ——
+        this.add.text(W / 2, H / 2 - 40, `最終分數：${this.score}`, {
+          fontFamily: 'a',
+          fontSize: '32px',
+          color: '#ffffff',
+          stroke: '#000',
+          strokeThickness: 2
+        })
+          .setOrigin(0.5)
+          .setDepth(101);
+
+        // 按鈕群
+        const btnY = H / 2 + 100;
+        const gap = 200;
+        const restart = this.add.image(W / 2 - gap, btnY, 'btnRestart')
+          .setInteractive({ useHandCursor: true })
+          .setScale(0.1)
+          .setDepth(101);
+
+
+        restart
+          .on('pointerover', () => {
+            restart.setScale(0.15);
+            this.btnSelectSound.play();   // ▶ 播放「hover」音效
+            restart.setAlpha(0.8);
+          })
+          .on('pointerout', () => {
+            restart.setScale(0.1);
+            restart.setAlpha(1);
+          })
+          .on('pointerdown', () => {
+            this.clickSelectSound.play(); // ▶ 播放「click」音效
+            this.scene.restart();
+          });
+
+        // —— Return 鈕 ——  
+        const ret = this.add.image(W / 2, btnY, 'btnReturn')
+          .setInteractive({ useHandCursor: true })
+          .setScale(0.1)
+          .setDepth(101);
+
+        ret
+          .on('pointerover', () => {
+            this.btnSelectSound.play();
+            ret.setScale(0.15);
+            ret.setAlpha(0.8);
+          })
+          .on('pointerout', () => {
+            ret.setScale(0.1);
+            ret.setAlpha(1);
+          })
+          .on('pointerdown', () => {
+            this.clickSelectSound.play();
+            this.scene.start('MenuScene');
+          });
+
+        // —— Next 鈕 ——  
+        if (passed && this.levelConfig.nextScene) {
+          const next = this.add.image(W / 2 + gap, btnY, 'btnNext')
+            .setInteractive({ useHandCursor: true })
+            .setScale(0.1)
+            .setDepth(101);
+
+          next
+            .on('pointerover', () => {
+              this.btnSelectSound.play();
+              next.setScale(0.15);
+              next.setAlpha(0.8);
+            })
+            .on('pointerout', () => {
+              next.setScale(0.1);
+              next.setAlpha(1);
+            })
+            .on('pointerdown', () => {
+              this.clickSelectSound.play();
+              this.scene.start(this.levelConfig.nextScene);
+            });
+        }
+
+      }
+
+      pauseGame() {
+        if (this.isPaused) return;
+        this.sound.pauseAll();
+
+        this.isPaused = true;
+        this.physics.world.pause();
+        this.timer.paused = true;
+        this.spawnEvent.paused = true;
+        this.player.anims.pause();
+        if (this.player2) this.player2.anims.pause();
+        if (this.eagles) this.eagles.getChildren().forEach(e => e.anims.pause());
+        if (this.snake) this.snake.anims.pause();
+        if (this.rainEmitter) this.rainEmitter.pause();
+
+        // 半透明遮罩
+        this.pauseOverlay = this.add.rectangle(0, 0, this.scale.width, this.scale.height, 0x000000, 0.7)
+          .setOrigin(0)
+          .setDepth(200);
+
+        // 文字
+        this.add.text(this.scale.width / 2, this.scale.height / 2 - 120, '遊戲暫停', {
+          fontFamily: 'a',
+          fontSize: '64px',
+          color: '#ffff00',
+          stroke: '#000',
+          strokeThickness: 4
+        })
+          .setOrigin(0.5)
+          .setDepth(201)
+          .setName('pauseText');
+
+        // 主畫面、重來、繼續
+        const btnY = this.scale.height / 2 + 20;
+        const gap = 200;
+        // 主畫面
+        const btnHome = this.add.image(this.scale.width / 2 - gap, btnY, 'btnReturn')
+          .setInteractive({ useHandCursor: true }).setScale(0.12).setDepth(201).setName('pauseBtnHome');
+
+
+
+        btnHome
+          .on('pointerover', () => {
+            btnHome.setScale(0.15);
+            btnHome.setAlpha(0.8);
+            this.btnSelectSound.play(); // hover 音效
+          })
+          .on('pointerout', () => {
+            btnHome.setScale(0.12);
+            btnHome.setAlpha(1);
+          })
+          .on('pointerdown', () => {
+            this.clickSelectSound.play(); // click 音效
+            this.resumeGame();
+            this.scene.start('MenuScene');
+          });
+
+        // 重來
+        const btnRestart = this.add.image(this.scale.width / 2, btnY, 'btnRestart')
+          .setInteractive({ useHandCursor: true }).setScale(0.12).setDepth(201).setName('pauseBtnRestart');
+        btnRestart
+          .on('pointerover', () => {
+            btnRestart.setScale(0.15);
+            btnRestart.setAlpha(0.8);
+            this.btnSelectSound.play();
+          })
+          .on('pointerout', () => {
+            btnRestart.setScale(0.12);
+            btnRestart.setAlpha(1);
+          })
+          .on('pointerdown', () => {
+            this.clickSelectSound.play();
+            this.resumeGame();
+            this.scene.restart();
+          });
+
+        // 繼續
+        const btnContinue = this.add.image(this.scale.width / 2 + gap, btnY, 'btnNext')
+          .setInteractive({ useHandCursor: true }).setScale(0.12).setDepth(201).setName('pauseBtnContinue');
+        btnContinue
+          .on('pointerover', () => {
+            btnContinue.setScale(0.15);
+            btnContinue.setAlpha(0.8);
+            this.btnSelectSound.play();
+          })
+          .on('pointerout', () => {
+            btnContinue.setScale(0.12);
+            btnContinue.setAlpha(1);
+          })
+          .on('pointerdown', () => {
+            this.clickSelectSound.play();
+            this.resumeGame();
+          });
+      }
+
+      resumeGame() {
+        if (!this.isPaused) return;
+        this.sound.resumeAll();
+        this.isPaused = false;
+        this.physics.world.resume();
+        this.timer.paused = false;
+        this.spawnEvent.paused = false;
+        this.player.anims.resume();
+        if (this.player2) this.player2.anims.resume();
+        if (this.eagles) this.eagles.getChildren().forEach(e => e.anims.resume());
+        if (this.snake) this.snake.anims.resume();
+        if (this.rainEmitter) this.rainEmitter.resume();
+
+        // 移除所有暫停UI
+        this.children.getAll().forEach(child => {
+          if (child.depth >= 200) child.destroy();
+        });
+      }
+
+
+
+
+
+
+    }
+    //---------------------------------------------------------------------------------------------
+
+    // 單機雙連關卡共用邏輯
+    class BaseLevelScene_mulit extends Phaser.Scene {
+      constructor(key, config) {
+        super({ key });
+        this.levelConfig = Object.assign({ backgroundKey: '', timeLimit: 60, passScore: 0, nextScene: null, showSnake: false, showEagle: false }, config);
+      }
+      preload() {
+        // 共用資源…
+        this.load.image('gr', 'asset/ground.png');
+        this.load.image('black', 'asset/fruits/black.png');
+        this.load.image('red', 'asset/fruits/red.png');
+        this.load.image('gold', 'asset/fruits/gold.png');
+        this.load.image('colorful', 'asset/fruits/colorful.png');
+        this.load.spritesheet('player1', 'asset/player1.png', { frameWidth: 900, frameHeight: 472 });
+        this.load.spritesheet('player2', 'asset/player2.png', { frameWidth: 900, frameHeight: 472 });
+        this.load.image('btnRestart', 'asset/reset.png');
+        this.load.image('btnReturn', 'asset/home.png');
+        this.load.image('btnNext', 'asset/next.png');
+        this.load.audio('btnselect1', 'asset/audio/select07.mp3');
+        this.load.audio('clickselect1', 'asset/audio/click.mp3');
+        this.load.audio('eatapple', 'asset/audio/eatapple.mp3');
+        this.load.audio('eatapple_p2', 'asset/audio/eatapple_p2.mp3');
+
+
+      }
+      init(data) { this.mode = data.mode || 'single'; }
+      create() {
+
+        this.eatapple = this.sound.add('eatapple', { volume: this.game.sound.volume });
+
+        // 如果你对 P2 也有专门的音效：
+        this.eatapple_p2 = this.sound.add('eatapple_p2', { volume: this.game.sound.volume });
+
+        this.btnSelectSound = this.sound.add('btnselect1');
+        this.clickSelectSound = this.sound.add('clickselect1');
+        this.isGameOver = false;
+        this.input.enabled = true;
+        this.add.image(400, 300, this.levelConfig.backgroundKey).setDisplaySize(800, 600);
+        this.ground = this.physics.add.staticImage(this.scale.width / 2, this.scale.height - 1, 'gr')
+          .setDisplaySize(this.scale.width, 40).setOrigin(0.5, 1).refreshBody();
+        // P1
+        this.player = this.physics.add.sprite(400, 0, 'player1').setScale(0.3).setOrigin(0.5, 1).setCollideWorldBounds(true);
+        this.player.y = this.ground.y - this.ground.displayHeight;
+        this.physics.add.collider(this.player, this.ground);
+        this.player.body.setSize(260, 0).setOffset(380, 0);
+        // P2
+        this.player2 = this.physics.add.sprite(200, 0, 'player2').setScale(0.3).setOrigin(0.5, 1).setCollideWorldBounds(true);
+        this.player2.y = this.ground.y - this.ground.displayHeight;
+        this.physics.add.collider(this.player2, this.ground);
+        this.player2.body.setSize(260, 0).setOffset(380, 0);
+
+        this.wasd = this.input.keyboard.addKeys({ up: Phaser.Input.Keyboard.KeyCodes.W, left: Phaser.Input.Keyboard.KeyCodes.A, down: Phaser.Input.Keyboard.KeyCodes.S, right: Phaser.Input.Keyboard.KeyCodes.D });
+        this.cursors = this.input.keyboard.createCursorKeys();
+        this.createAnimations();
+
+        // 分數
+        this.score = 0; this.score_p2 = 0;
+        this.scoreText = this.add.text(16, 16, 'P1: 0', { fontFamily: 'a', fontSize: '36px', color: '#ff0000', strokeThickness: 2 });
+        this.scoreText_p2 = this.add.text(16, 56, 'P2: 0', { fontFamily: 'a', fontSize: '36px', color: '#0000ff', strokeThickness: 2 });
+        this.timeLeft = this.levelConfig.timeLimit;
+        this.timerText = this.add.text(650, 16, 'Time: ' + this.timeLeft, { fontFamily: 'a', fontSize: '36px', color: '#ffa500', strokeThickness: 2 });
+        this.timer = this.time.addEvent({ delay: 1000, callback: this.updateTimer, callbackScope: this, loop: true });
+
+        // 掉落物
+        this.fruits = this.physics.add.group();
+        this.spawnEvent = this.time.addEvent({ delay: 800, callback: this.spawnFruit, callbackScope: this, loop: true });
+        this.physics.add.overlap(this.player, this.fruits, this.collectFruit, null, this);
+        this.physics.add.overlap(this.player2, this.fruits, this.collectFruitP2, null, this);
+
+        // 鷹、蛇、積水 也綁給 P2
+        if (this.levelConfig.showEagle) {
+          this.eagles = this.physics.add.group();
+          this.time.addEvent({ delay: 10000, callback: this.spawnEagle, callbackScope: this, loop: true });
+          this.physics.add.overlap(this.player, this.eagles, this.hitEagle, null, this);
+          this.physics.add.overlap(this.player2, this.eagles, this.hitEagle, null, this);
+        }
+        if (this.levelConfig.showSnake) {
+          // 延迟 10 秒后（或改成你想要的时机）生成蛇
+          this.time.delayedCall(10000, this.spawnSnake, null, this);
+        }
+
+
+        this.isHitP1 = false;
+        this.isHitP2 = false;
+        this.isPaused = false;
+        this.pauseOverlay = null;
+        this.input.keyboard.on('keydown-ESC', () => {
+          this.isPaused ? this.resumeGame() : this.pauseGame();
+        });
+
+
+
+
+
+
+      }
+
+
+      update() {
+
+
+        if (this.isPaused) return;
+
+        if (Phaser.Input.Keyboard.JustDown(this.cursors.up) && this.player.body.blocked.down) {
+          this.player.setVelocityY(-350);       // 調整跳躍力道
+          // 跳過後面左右/蹲下邏輯
+        }
+
+        // 2️⃣ 先把水平速度歸零
+        this.player.setVelocityX(0);
+
+
+
+
+        const speed = 300 * (this.player.isSlowed ? 0.6 : 1);
+
+        // 1. 先處理左右移動，並記錄最後一次按的方向
+        if (this.cursors.left.isDown) {
+          this.player.setVelocityX(-speed);
+          this.lastDirection = 'left';
+        } else if (this.cursors.right.isDown) {
+          this.player.setVelocityX(speed);
+          this.lastDirection = 'right';
+        } else {
+          this.player.setVelocityX(0);
+        }
+
+        // 2. 若正在按「下」就優先做蹲下
+        if (this.cursors.down.isDown) {
+          // 停止水平移動
+          this.player.setVelocityX(0);
+          // 播 lie 動畫
+          this.player.anims.play('lie', true);
+          // 根據最後方向水平翻轉
+          this.player.setFlipX(this.lastDirection === 'left');
+          return;    // 不再執行後面的走路/待機動畫
+        }
+
+        // 3. 走路 / 待機
+        if (this.player.body.velocity.x < 0) {
+          // 往左走
+          this.player.anims.play('walk_left', true);
+          this.player.setFlipX(false);  // walk_left 已經是左向，不需要再翻
+        }
+        else if (this.player.body.velocity.x > 0) {
+          // 往右走
+          this.player.anims.play('walk_right', true);
+          this.player.setFlipX(false);
+        }
+        else {
+          // 待機
+          this.player.anims.play('ready', true);
+          // 待機貼圖也要跟方向一致
+          this.player.setFlipX(this.lastDirection === 'left');
+        }
+
+
+
+        //-----------------
+        // 1️⃣ 使用 W 來跳躍（對 player1）
+        if (Phaser.Input.Keyboard.JustDown(this.wasd.up) && this.player2.body.blocked.down) {
+          this.player2.setVelocityY(-350);
+          // 跳過後面左右/蹲下邏輯
+          return;
+        }
+
+        // 2️⃣ 先把水平速度歸零
+        this.player2.setVelocityX(0);
+
+        // 3️⃣ 水平移動（A / D 控制 player2）
+        const speed2 = 300 * (this.player2.isSlowed ? 0.6 : 1);
+        if (this.wasd.left.isDown) {
+          this.player2.setVelocityX(-speed2);
+          this.lastDir2 = 'left';
+        } else if (this.wasd.right.isDown) {
+          this.player2.setVelocityX(speed2);
+          this.lastDir2 = 'right';
+        } else {
+          this.player2.setVelocityX(0);
+        }
+
+        // 4️⃣ 蹲下（S 鍵優先）
+        if (this.wasd.down.isDown) {
+          this.player2.setVelocityX(0);
+          this.player2.anims.play('lie2', true);
+          this.player2.setFlipX(this.lastDir2 === 'left');
+          return;
+        }
+
+        // 5️⃣ 走路 / 待機 動畫
+        if (this.player2.body.velocity.x < 0) {
+          this.player2.anims.play('walk_left2', true);
+          this.player2.setFlipX(false);
+        }
+        else if (this.player2.body.velocity.x > 0) {
+          this.player2.anims.play('walk_right2', true);
+          this.player2.setFlipX(false);
+        }
+        else {
+          this.player2.anims.play('ready2', true);
+          this.player2.setFlipX(this.lastDir2 === 'left2');
+        }
+
+
+
+        // 蛇邊界反彈
+        // 根據水平速度翻轉蛇的貼圖
+        if (this.snake && this.snake.body && this.snake.body.velocity) {
+          if (this.snake.body.velocity.x > 0) {
+            this.snake.setFlipX(true);
+          } else if (this.snake.body.velocity.x < 0) {
+            this.snake.setFlipX(false);
+          }
+        }
+
+
+        // 清理飛出畫面老鷹
+        if (this.eagles) {
+          this.eagles.getChildren().forEach(eagle => {
+            if (eagle.x < -50 || eagle.x > this.scale.width + 50) {
+              eagle.destroy();
+            }
+          });
+        }
+      }
+
+      createAnimations() {
+        this.anims.create({ key: 'walk_left', frames: this.anims.generateFrameNumbers('player1', { start: 0, end: 3 }), frameRate: 8, repeat: -1 });
+        this.anims.create({ key: 'ready', frames: [{ key: 'player1', frame: 4 }], frameRate: 1, repeat: -1 });
+        this.anims.create({ key: 'walk_right', frames: this.anims.generateFrameNumbers('player1', { start: 5, end: 8 }), frameRate: 8, repeat: -1 });
+        this.anims.create({ key: 'lie', frames: this.anims.generateFrameNumbers('player1', { start: 9, end: 9 }), frameRate: 8, repeat: -1 });
+
+        //----------------------
+        this.anims.create({ key: 'walk_left2', frames: this.anims.generateFrameNumbers('player2', { start: 0, end: 3 }), frameRate: 8, repeat: -1 });
+        this.anims.create({ key: 'ready2', frames: [{ key: 'player2', frame: 4 }], frameRate: 1, repeat: -1 });
+        this.anims.create({ key: 'walk_right2', frames: this.anims.generateFrameNumbers('player2', { start: 5, end: 8 }), frameRate: 8, repeat: -1 });
+        this.anims.create({ key: 'lie2', frames: this.anims.generateFrameNumbers('player2', { start: 9, end: 9 }), frameRate: 8, repeat: -1 });
+
+        if (this.levelConfig.showEagle) {
+          this.anims.create({ key: 'eagle', frames: this.anims.generateFrameNumbers('eagle', { start: 0, end: 8 }), frameRate: 9, repeat: -1 });
+        }
+        if (this.levelConfig.showSnake) {
+          this.anims.create({ key: 'snake_move', frames: this.anims.generateFrameNumbers('snake', { start: 0, end: 4 }), frameRate: 6, repeat: -1 });
+        }
+
+
+      }
+
+      updateTimer() {
+        this.timeLeft--;
+        this.timerText.setText('Time: ' + this.timeLeft);
+        if (this.timeLeft <= 0) {
+          this.timer.remove(false);
+          this.spawnEvent.remove(false);
+          this.endLevel();
+        }
+      }
+
+      spawnFruit() {
+        const x = Phaser.Math.Between(50, 750);
+        const rand = Math.random();
+        let type;
+        if (rand < 0.5) type = 'red';
+        else if (rand < 0.7) type = 'black';
+        else if (rand < 0.95) type = 'gold';
+        else if (!this.rainbowDropped) { type = 'colorful'; this.rainbowsDropped = true; }
+        else type = 'red';
+        const fruit = this.fruits.create(x, 0, type).setScale(0.05);
+        fruit.type = type;
+        fruit.setVelocityY(150);
+      }
+      collectFruit(player, fruit) { fruit.destroy(); this.eatapple.play({ volume: this.game.sound.volume }); switch (fruit.type) { case 'red': this.score += 2; break; case 'gold': this.score += 10; break; case 'colorful': this.score += 100; break; case 'black': this.score -= 10; break; } this.scoreText.setText('P1: ' + this.score); }
+      collectFruitP2(player2, fruit) { fruit.destroy(); this.eatapple_p2.play({ volume: this.game.sound.volume }); switch (fruit.type) { case 'red': this.score_p2 += 2; break; case 'gold': this.score_p2 += 10; break; case 'colorful': this.score_p2 += 100; break; case 'black': this.score_p2 -= 10; break; } this.scoreText_p2.setText('P2: ' + this.score_p2); }
+      //------------------
+
+      spawnEagle() {
+        const { width } = this.scale;
+        const y = 400;
+        const fromLeft = Phaser.Math.Between(0, 1) === 0;
+        const x = fromLeft ? -50 : width + 50;
+        const speed = 200 * (fromLeft ? 1 : -1);
+        const eagle = this.eagles.create(x, y, 'eagle').setOrigin(0.5).setScale(1).setDepth(50);
+        eagle.body.allowGravity = false;
+        eagle.setVelocityX(speed);
+        eagle.setFlipX(!fromLeft);
+        eagle.play('eagle');
+      }
+
+      spawnSnake() {
+        this.snake = this.physics.add
+          .sprite(50, 0, 'snake')
+          .setOrigin(0.5, 1)
+          .setScale(0.35)
+          .setCollideWorldBounds(true)
+          .setBounce(1, 0);
+
+        const floorTopY = this.ground.y - this.ground.displayHeight;
+        this.snake.y = floorTopY;
+        this.snake.body.setSize(300, 80);
+        this.snake.body.setOffset(
+          -this.snake.displayWidth / 2 + 100,
+          -this.snake.displayHeight + 100
+        );
+
+        this.physics.add.collider(this.snake, this.ground);
+        this.snake.play('snake_move');
+        this.snake.setVelocityX(100);
+
+        // P1、P2 同时能撞蛇
+        this.physics.add.overlap(this.player, this.snake, this.hitSnake, null, this);
+        this.physics.add.overlap(this.player2, this.snake, this.hitSnake, null, this);
+      }
+      hitSnake(player, snake) {
+        const isP1 = (player === this.player);
+        const flag = isP1 ? 'isHitP1' : 'isHitP2';
+
+        // 如果正在冷却，或趴下无敌，就不再扣
+        const downKey = isP1 ? this.cursors.down : this.wasd.down;
+        if (this[flag] || downKey.isDown) return;
+
+        // 进入冷却
+        this[flag] = true;
+
+        // 扣分并更新对应文本
+        if (isP1) {
+          this.score -= 15;
+          this.scoreText.setText('P1: ' + this.score);
+        } else {
+          this.score_p2 -= 15;
+          this.scoreText_p2.setText('P2: ' + this.score_p2);
+        }
+
+        // 撞到的玩家闪红
+        player.setTint(0xff0000);
+        this.time.delayedCall(500, () => player.clearTint());
+
+        // 冷却结束后，允许再次扣分
+        this.time.delayedCall(1000, () => {
+          this[flag] = false;
+        });
+      }
+
+      hitEagle(player, eagle) {
+        const isP1 = (player === this.player);
+
+        // P1 用 cursors.down，P2 用 wasd.S
+        const isCrouching = isP1
+          ? this.cursors.down.isDown
+          : this.wasd.down.isDown;
+        if (isCrouching) {
+          return;
+        }
+
+        eagle.destroy();
+
+        if (isP1) {
+          this.score -= 20;
+          this.scoreText.setText('P1: ' + this.score);
+        } else {
+          this.score_p2 -= 20;
+          this.scoreText_p2.setText('P2: ' + this.score_p2);
+        }
+
+        // 给撞到的那个玩家上色
+        player.setTint(0x4b0082);
+        this.time.delayedCall(200, () => player.clearTint());
+      }
+      endLevel() {
+        console.log('執行 endLevel()');
+        if (this.isGameOver) return;
+        this.isGameOver = true;
+
+        // 暫停世界與動畫
+        this.physics.pause();
+        if (this.rainEmitter) this.rainEmitter.stop();
+        this.player?.anims.stop();
+        this.player2?.anims.stop();
+        this.eagles?.getChildren().forEach(e => e.anims.stop());
+        this.snake?.anims.stop();
+
+        const W = this.scale.width;
+        const H = this.scale.height;
+
+        // 半透明遮罩
+        this.add.rectangle(0, 0, W, H, 0x000000, 0.7)
+          .setOrigin(0)
+          .setDepth(100);
+
+        // 判斷勝負
+        let msg, color;
+        if (this.score > this.score_p2) {
+          msg = '紅方勝利！';
+          color = '#ff0000';
+        } else if (this.score < this.score_p2) {
+          msg = '藍方勝利！';
+          color = '#0000ff';
+        } else {
+          msg = '平 手 ！';
+          color = '#ffff00';
+        }
+        // 主訊息
+        this.add.text(W / 2, H / 2 - 120, msg, {
+          fontFamily: 'a', fontSize: '64px', color, stroke: '#000', strokeThickness: 4
+        }).setOrigin(0.5).setDepth(101);
+
+        // 雙方最終分數
+        const scoreText = `紅方：${this.score}  |  藍方：${this.score_p2}`;
+        this.add.text(W / 2, H / 2 - 40, scoreText, {
+          fontFamily: 'a', fontSize: '32px', color: '#ffffff', stroke: '#000', strokeThickness: 2
+        }).setOrigin(0.5).setDepth(101);
+
+        // 按鈕群（保持不變）
+        const btnY = H / 2 + 100;
+        const gap = 200;
+        const restart = this.add.image(W / 2 - gap, btnY, 'btnRestart')
+          .setInteractive({ useHandCursor: true }).setScale(0.1).setDepth(101);
+        restart
+          .on('pointerover', () => { restart.setScale(0.15); this.btnSelectSound.play(); restart.setAlpha(0.8); })
+          .on('pointerout', () => { restart.setScale(0.1); restart.setAlpha(1); })
+          .on('pointerdown', () => { this.clickSelectSound.play(); this.scene.restart(); });
+
+        const ret = this.add.image(W / 2, btnY, 'btnReturn')
+          .setInteractive({ useHandCursor: true }).setScale(0.1).setDepth(101);
+        ret
+          .on('pointerover', () => { this.btnSelectSound.play(); ret.setScale(0.15); ret.setAlpha(0.8); })
+          .on('pointerout', () => { ret.setScale(0.1); ret.setAlpha(1); })
+          .on('pointerdown', () => { this.clickSelectSound.play(); this.scene.start('MenuScene'); });
+
+        if (this.levelConfig.nextScene) {
+          const next = this.add.image(W / 2 + gap, btnY, 'btnNext')
+            .setInteractive({ useHandCursor: true }).setScale(0.1).setDepth(101);
+          next
+            .on('pointerover', () => { this.btnSelectSound.play(); next.setScale(0.15); next.setAlpha(0.8); })
+            .on('pointerout', () => { next.setScale(0.1); next.setAlpha(1); })
+            .on('pointerdown', () => { this.clickSelectSound.play(); this.scene.start(this.levelConfig.nextScene); });
+        }
+      }
+
+      pauseGame() {
+        if (this.isPaused) return;
+        this.sound.pauseAll();
+        this.isPaused = true;
+        this.physics.world.pause();
+        this.timer.paused = true;
+        this.spawnEvent.paused = true;
+        this.player.anims.pause();
+        this.player2.anims.pause();
+        if (this.eagles) this.eagles.getChildren().forEach(e => e.anims.pause());
+        if (this.snake) this.snake.anims.pause();
+        if (this.rainEmitter) this.rainEmitter.pause();
+
+        // 半透明遮罩
+        this.pauseOverlay = this.add.rectangle(0, 0, this.scale.width, this.scale.height, 0x000000, 0.7)
+          .setOrigin(0).setDepth(200);
+
+        // 文字
+        this.add.text(this.scale.width / 2, this.scale.height / 2 - 120, '遊戲暫停', {
+          fontFamily: 'a',
+          fontSize: '64px',
+          color: '#ffff00',
+          stroke: '#000',
+          strokeThickness: 4
+        }).setOrigin(0.5).setDepth(201).setName('pauseText');
+
+        const btnY = this.scale.height / 2 + 20;
+        const gap = 200;
+
+        // 主畫面
+        const btnHome = this.add.image(this.scale.width / 2 - gap, btnY, 'btnReturn')
+          .setInteractive({ useHandCursor: true }).setScale(0.12).setDepth(201).setName('pauseBtnHome');
+        btnHome
+          .on('pointerover', () => {
+            btnHome.setScale(0.15);
+            btnHome.setAlpha(0.8);
+            this.btnSelectSound.play();
+          })
+          .on('pointerout', () => {
+            btnHome.setScale(0.12);
+            btnHome.setAlpha(1);
+          })
+          .on('pointerdown', () => {
+            this.clickSelectSound.play();
+            this.resumeGame();
+            this.scene.start('MenuScene');
+          });
+
+        // 重來
+        const btnRestart = this.add.image(this.scale.width / 2, btnY, 'btnRestart')
+          .setInteractive({ useHandCursor: true }).setScale(0.12).setDepth(201).setName('pauseBtnRestart');
+        btnRestart
+          .on('pointerover', () => {
+            btnRestart.setScale(0.15);
+            btnRestart.setAlpha(0.8);
+            this.btnSelectSound.play();
+          })
+          .on('pointerout', () => {
+            btnRestart.setScale(0.12);
+            btnRestart.setAlpha(1);
+          })
+          .on('pointerdown', () => {
+            this.clickSelectSound.play();
+            this.resumeGame();
+            this.scene.restart();
+          });
+
+        // 繼續
+        const btnContinue = this.add.image(this.scale.width / 2 + gap, btnY, 'btnNext')
+          .setInteractive({ useHandCursor: true }).setScale(0.12).setDepth(201).setName('pauseBtnContinue');
+        btnContinue
+          .on('pointerover', () => {
+            btnContinue.setScale(0.15);
+            btnContinue.setAlpha(0.8);
+            this.btnSelectSound.play();
+          })
+          .on('pointerout', () => {
+            btnContinue.setScale(0.12);
+            btnContinue.setAlpha(1);
+          })
+          .on('pointerdown', () => {
+            this.clickSelectSound.play();
+            this.resumeGame();
+          });
+      }
+
+      resumeGame() {
+        if (!this.isPaused) return;
+        this.sound.resumeAll();
+        this.isPaused = false;
+        this.physics.world.resume();
+        this.timer.paused = false;
+        this.spawnEvent.paused = false;
+        this.player.anims.resume();
+        this.player2.anims.resume();
+        if (this.eagles) this.eagles.getChildren().forEach(e => e.anims.resume());
+        if (this.snake) this.snake.anims.resume();
+        if (this.rainEmitter) this.rainEmitter.resume();
+        // 刪除 UI
+        this.children.getAll().forEach(child => {
+          if (child.depth >= 200) child.destroy();
+        });
+      }
+
+    }
+    //---------------------------------------------------------------------------------------------
+
+    // 即時音量控制-----------------------------------------------------------------------------------
+    class SettingScene extends Phaser.Scene {
+      constructor() {
+        super({ key: 'SettingScene' });
+      }
+      preload() {
+        this.load.image('setting_bg', 'asset/menu/bg.jpg');
+        this.load.image('slider_bar', 'asset/slider_bar.png');
+        this.load.image('slider_knob', 'asset/slider_knob.png');
+        this.load.audio('btnselect', 'asset/audio/select07.mp3');
+        this.load.audio('clickselect', 'asset/audio/click.mp3');
+      }
+      create() {
+        // 背景與標題
+        this.add.image(400, 300, 'setting_bg').setDisplaySize(800, 600).setAlpha(0.4);
+        this.add.text(400, 100, '設定', { fontFamily: 'a', fontSize: '48px', color: '#ffff00' })
+          .setOrigin(0.5);
+
+        // 音效音量標籤
+        this.add.text(300, 200, '音量', { fontFamily: 'a', fontSize: '28px', color: '#fff' })
+          .setOrigin(1, 0.5);
+
+        // 1. 先创建示例音效，带上当前全局音量
+        const sampleSound = this.sound.add('btnselect', { volume: game.sound.volume });
+
+        // 2. 滑杆底与 knob 同之前
+        this.add.image(420, 200, 'slider_bar').setOrigin(0, 0.5);
+        const knob = this.add.image(420 + game.sound.volume * 220, 200, 'slider_knob')
+          .setOrigin(0.5)
+          .setInteractive({ draggable: true });
+        this.input.setDraggable(knob);
+
+        // 3. 百分比文字
+        const volText = this.add.text(650, 200, Math.round(game.sound.volume * 100) + '%', {
+          fontFamily: 'a', fontSize: '24px', color: '#ffff00'
+        }).setOrigin(0, 0.5);
+
+        // 拖拽开始：以当前音量播放示例音
+        knob.on('dragstart', () => {
+          sampleSound.play({ loop: true, volume: game.sound.volume });
+        });
+
+        // 拖拽中：更新音量并同步到示例音
+        knob.on('drag', (_pointer, dragX) => {
+          dragX = Phaser.Math.Clamp(dragX, 420, 640);
+          knob.x = dragX;
+          const vol = (dragX - 420) / 220;
+          game.sound.volume = vol;
+          volText.setText(Math.round(vol * 100) + '%');
+          sampleSound.setVolume(vol);
+        });
+
+        // 拖拽结束：停示例音并播放 click 效果
+        knob.on('dragend', () => {
+          sampleSound.stop();
+          this.sound.play('clickselect', { volume: game.sound.volume });
+        });
+        // 返回主選單按鈕
+        const backBtn = this.add.text(400, 450, '返回主選單', {
+          fontFamily: 'a', fontSize: '32px', color: '#ff0000', backgroundColor: '#fff'
+        }).setOrigin(0.5).setPadding(20, 8, 20, 8)
+          .setInteractive({ useHandCursor: true });
+
+        backBtn.on('pointerover', () => {
+          backBtn.setStyle({ backgroundColor: '#ffc' });
+          this.sound.play('btnselect');
+        });
+        backBtn.on('pointerout', () => backBtn.setStyle({ backgroundColor: '#fff' }));
+        backBtn.on('pointerdown', () => {
+          this.sound.play('clickselect');
+          this.scene.start('MenuScene');
+        });
+      }
+    }
+    //---------------------------------------------------------------------------------------------
+
+
+
+
+
+    // 單機關卡1場景---------------------------------------------------------------------------------
+    class Level1Scene extends BaseLevelScene {
+      constructor() {
+        super('single_1Scene', {
+          backgroundKey: 'level1',
+          timeLimit: 60,
+          passScore: 100,
+          nextScene: 'single_2Scene',
+          showSnake: false,
+          showEagle: false
+        });
+      }
+
+      preload() {
+        super.preload();
+        this.load.image('level1', 'asset/menu/sence/level1.jpg');
+
+      }
+      update() {
+        super.update();
+      }
+    }
+    //---------------------------------------------------------------------------------------------
+
+    // 單機關卡2場景
+    class Level2Scene extends BaseLevelScene {
+      constructor() {
+        super('single_2Scene', {
+          backgroundKey: 'level2',
+          timeLimit: 60,
+          passScore: 150,
+          nextScene: 'single_3Scene',
+          showSnake: true,
+          showEagle: true
+        });
+      }
+
+      preload() {
+        super.preload();
+        this.load.image('level2', 'asset/menu/sence/level2.jpg');
+        this.load.spritesheet('snake', 'asset/snake.png', { frameWidth: 330, frameHeight: 136 });
+        this.load.spritesheet('eagle', 'asset/engle.png', { frameWidth: 68, frameHeight: 115 });
+        // 不再載入 raindrop、puddle
+      }
+
+      create() {
+        super.create();
+        // 現在這裡不做任何下雨或 puddle 的設定
+        this.lastDirection = 'right';
+      }
+
+      update() {
+        super.update();
+        // （如有需要，可以在這裡做 puddle 影響結束後的還原）
+      }
+    }
+    //---------------------------------------------------------------------------------------------
+
+    // 單機關卡3場景 ------------------------------------------------------------------------------------------------------
+    class Level3Scene extends BaseLevelScene {
+      constructor() {
+        super('single_3Scene', {
+          backgroundKey: 'level3',
+          timeLimit: 60,
+          passScore: 200,
+          nextScene: 'EndStoryScene',
+          showSnake: true,
+          showEagle: true
+        });
+      }
+
+      preload() {
+        super.preload();
+        this.load.image('level3', 'asset/menu/sence/level3.jpg');
+        this.load.spritesheet('snake', 'asset/snake.png', { frameWidth: 330, frameHeight: 136 });
+        this.load.spritesheet('eagle', 'asset/engle.png', { frameWidth: 68, frameHeight: 115 });
+        // 下雨所需資源
+        this.load.image('raindrop', 'asset/raindrop.png');
+        this.load.image('puddle', 'asset/puddle.png');
+      }
+
+      create() {
+        super.create();
+
+        // —— 下雨粒子效果 —— 
+        const W = this.scale.width, H = this.scale.height;
+        const rainParticles = this.add.particles('raindrop');
+        this.rainEmitter = rainParticles.createEmitter({
+          x: { min: 0, max: W },
+          y: 0,
+          lifespan: 2000,
+          speedY: { min: 400, max: 600 },
+          scale: { start: 0.02, end: 0.02 },
+          quantity: 2,
+          frequency: 50,
+          blendMode: 'NORMAL'
+        });
+        rainParticles.setDepth(5);
+        // 死區：一進到地板頂端以下就 kill
+        const groundTopY = this.ground.y - this.ground.displayHeight;
+        this.rainEmitter.setDeathZone({
+          type: 'onEnter',
+          source: new Phaser.Geom.Rectangle(0, groundTopY, W, H - groundTopY)
+        });
+
+        // puddles 群組
+        this.puddles = this.physics.add.staticGroup();
+
+
+        // 每 5 秒切換一次 spawn/remove puddles
+        this.shouldSpawn = true;
+        this.time.addEvent({
+          delay: 5000,
+          callback: this.togglePuddles,
+          callbackScope: this,
+          loop: true
+        });
+
+        this.lastDirection = 'right';
+      }
+
+      togglePuddles() {
+        const groundTopY = this.ground.y - this.ground.displayHeight;
+        if (this.shouldSpawn) {
+          for (let i = 0; i < 2; i++) {
+            const x = Phaser.Math.Between(50, this.scale.width - 50);
+            this.puddles.create(x, groundTopY, 'puddle')
+              .setOrigin(0.5, 0.5)
+              .setScale(0.08)
+              .refreshBody();
+          }
+        } else {
+          const children = this.puddles.getChildren();
+          for (let i = 0; i < 2 && children.length > 0; i++) {
+            children[0].destroy();
+          }
+        }
+        this.shouldSpawn = !this.shouldSpawn;
+      }
+
+      update() {
+        super.update();
+        // 這裡如果要在 player 離開 puddle 後取消 slow，可以加還原邏輯
+        if (this.puddles) {
+          let isOnPuddle = false;
+          this.puddles.getChildren().forEach(puddle => {
+            if (Phaser.Geom.Intersects.RectangleToRectangle(this.player.getBounds(), puddle.getBounds())) {
+              isOnPuddle = true;
+            }
+          });
+          this.player.isSlowed = isOnPuddle;
+        }
+      }
+
+    }
+
+    //---------------------------------------------------------------------------------------------
+
+
+
+
+    // 單機雙連關卡1場景---------------------------------------------------------------------------------
+    class Level1Scene_mulit extends BaseLevelScene_mulit {
+      constructor() {
+        super('Level1Scene_mulit', {
+          backgroundKey: 'level1',
+          timeLimit: 60,
+          passScore: 1,
+          nextScene: 'Level2Scene_mulit',
+          showSnake: false,
+          showEagle: false
+        });
+      }
+
+      preload() {
+        super.preload();
+        this.load.image('level1', 'asset/menu/sence/level1.jpg');
+
+      }
+      update() {
+        super.update();
+      }
+    }
+
+    //---------------------------------------------------------------------------------------------
+
+
+    // 單機雙連關卡2場景---------------------------------------------------------------------------------
+    class Level2Scene_mulit extends BaseLevelScene_mulit {
+      constructor() {
+        super('Level2Scene_mulit', {
+          backgroundKey: 'level2',
+          timeLimit: 60,
+          passScore: 1,
+          nextScene: 'Level3Scene_mulit',
+          showSnake: true,
+          showEagle: true
+        });
+      }
+
+      preload() {
+        super.preload();
+        this.load.image('level2', 'asset/menu/sence/level2.jpg');
+        this.load.spritesheet('snake', 'asset/snake.png', { frameWidth: 330, frameHeight: 136 });
+        this.load.spritesheet('eagle', 'asset/engle.png', { frameWidth: 68, frameHeight: 115 });
+        // 不再載入 raindrop、puddle
+      }
+
+      create() {
+        super.create();
+        // 現在這裡不做任何下雨或 puddle 的設定
+        this.lastDirection = 'right';
+      }
+
+      update() {
+        super.update();
+        // （如有需要，可以在這裡做 puddle 影響結束後的還原）
+      }
+    }
+    //---------------------------------------------------------------------------------------------
+
+
+    // 單機雙連關卡2場景---------------------------------------------------------------------------------
+    class Level3Scene_mulit extends BaseLevelScene_mulit {
+      constructor() {
+        super('Level3Scene_mulit', {
+          backgroundKey: 'level3',
+          timeLimit: 60,
+          passScore: 0,
+          nextScene: false,
+          showSnake: true,
+          showEagle: true
+        });
+      }
+
+      preload() {
+        super.preload();
+        this.load.image('level3', 'asset/menu/sence/level3.jpg');
+        this.load.spritesheet('snake', 'asset/snake.png', { frameWidth: 330, frameHeight: 136 });
+        this.load.spritesheet('eagle', 'asset/engle.png', { frameWidth: 68, frameHeight: 115 });
+        // 下雨所需資源
+        this.load.image('raindrop', 'asset/raindrop.png');
+        this.load.image('puddle', 'asset/puddle.png');
+      }
+
+      create() {
+        super.create();
+
+        // —— 下雨粒子效果 —— 
+        const W = this.scale.width, H = this.scale.height;
+        const rainParticles = this.add.particles('raindrop');
+        this.rainEmitter = rainParticles.createEmitter({
+          x: { min: 0, max: W },
+          y: 0,
+          lifespan: 2000,
+          speedY: { min: 400, max: 600 },
+          scale: { start: 0.02, end: 0.02 },
+          quantity: 2,
+          frequency: 50,
+          blendMode: 'NORMAL'
+        });
+        rainParticles.setDepth(5);
+
+        const groundTopY = this.ground.y - this.ground.displayHeight;
+        this.rainEmitter.setDeathZone({
+          type: 'onEnter',
+          source: new Phaser.Geom.Rectangle(0, groundTopY, W, H - groundTopY)
+        });
+
+        // puddles 群組
+        this.puddles = this.physics.add.staticGroup();
+
+
+        this.shouldSpawn = true;
+        this.time.addEvent({
+          delay: 5000,
+          callback: this.togglePuddles,
+          callbackScope: this,
+          loop: true
+        });
+
+        this.lastDirection = 'right';
+      }
+
+      // 補一個 togglePuddles 到 Level3Scene_mulit class
+      togglePuddles() {
+        const groundTopY = this.ground.y - this.ground.displayHeight;
+        if (this.shouldSpawn) {
+          for (let i = 0; i < 2; i++) {
+            const x = Phaser.Math.Between(50, this.scale.width - 50);
+            this.puddles.create(x, groundTopY, 'puddle')
+              .setOrigin(0.5, 0.5)
+              .setScale(0.08)
+              .refreshBody();
+          }
+        } else {
+          const children = this.puddles.getChildren();
+          for (let i = 0; i < 2 && children.length > 0; i++) {
+            children[0].destroy();
+          }
+        }
+        this.shouldSpawn = !this.shouldSpawn;
+      }
+      update() {
+        super.update();
+        // puddle 檢查
+        let isOnPuddle1 = false, isOnPuddle2 = false;
+        if (this.puddles) {
+          this.puddles.getChildren().forEach(puddle => {
+            if (Phaser.Geom.Intersects.RectangleToRectangle(this.player.getBounds(), puddle.getBounds())) {
+              isOnPuddle1 = true;
+            }
+            if (Phaser.Geom.Intersects.RectangleToRectangle(this.player2.getBounds(), puddle.getBounds())) {
+              isOnPuddle2 = true;
+            }
+          });
+        }
+        this.player.isSlowed = isOnPuddle1;
+        this.player2.isSlowed = isOnPuddle2;
+
+
+      }
+
+
+
+
+
+    }
+
+    class EndStoryScene extends Phaser.Scene {
+      constructor() { super({ key: 'EndStoryScene' }); }
+      preload() {
+        this.load.image('level3', 'asset/menu/sence/level3.jpg');
+      }
+      create() {
+        const bg = this.add.image(400, 300, 'level3').setDisplaySize(800, 600).setAlpha(0.7);
+        const { width, height } = this.sys.game.config;
+        const rectW = width - 100, rectH = height * 0.7;
+        const rectX = width / 2, rectY = height / 2, pad = 5;
+        this.add.rectangle(rectX, rectY, rectW, rectH, 0x000000, 0.6).setOrigin(0.5);
+        const maskG = this.make.graphics();
+        maskG.fillRect(rectX - rectW / 2, rectY - rectH / 2, rectW, rectH);
+        const mask = maskG.createGeometryMask();
+        this.fullText = endstoryText.join(' ');
+        this.text = this.add.text(rectX - rectW / 2 + pad, rectY - rectH / 2 + pad, '', {
+          fontFamily: 'a', fontSize: '24px', color: '#ffffff', align: 'left',
+          wordWrap: { width: rectW - pad * 2, useAdvancedWrap: true },
+          lineSpacing: 30
+        }).setOrigin(0).setMask(mask);
+        this.charIndex = 0;
+        this.typeNextChar();
+      }
+      typeNextChar() {
+        this.charIndex++;
+        this.text.setText(this.fullText.substr(0, this.charIndex));
+        if (this.charIndex < this.fullText.length) {
+          this.time.delayedCall(40, this.typeNextChar, [], this);
+        } else {
+          this.time.delayedCall(500, () => this.scene.start('CreditScene'));
+        }
+      }
+    }
+
+    // 新增製作團隊場景：CreditScene
+    class CreditScene extends Phaser.Scene {
+      constructor() { super({ key: 'CreditScene' }); }
+      preload() {
+        this.load.image('level3', 'asset/menu/sence/level3.jpg');
+      }
+
+
+
+      create() {
+        const bg = this.add.image(400, 300, 'level3').setDisplaySize(800, 600).setAlpha(0.7);
+        const W = this.scale.width, H = this.scale.height;
+        const credits = [
+          '製作團隊',
+          '製作人：\n陳柏睿Ray\n 葉信宏Yeah\n李長軒Sherwin\n吳紘睿Henry',
+          '腳本：\n陳柏睿Ray\n 葉信宏Yeah\n李長軒Sherwin\n吳紘睿Henry',
+          '程式：\n陳柏睿Ray',
+          '美術：\n陳柏睿Ray\n 葉信宏Yeah',
+          '音效：\n陳柏睿Ray\nOpen Game Art™',
+          '感謝遊玩！'
+        ];
+        const creditText = this.add.text(W / 2, H + 20, credits.join('\n'), {
+          fontFamily: 'a', fontSize: '32px', color: '#ffffff', align: 'center', lineSpacing: 32
+        }).setOrigin(0.5, 0);
+        const maskG = this.make.graphics();
+        maskG.fillRect(50, 50, W - 100, H - 100);
+        const mask = maskG.createGeometryMask();
+        creditText.setMask(mask);
+        const totalHeight = creditText.height + 100;
+        this.tweens.add({
+          targets: creditText,
+          y: -totalHeight,
+          ease: 'Linear',
+          duration: totalHeight * 20,
+          onComplete: () => {
+            this.input.on('wheel', (_p, _g, _dx, dy) => {
+              creditText.y -= dy;
+              const minY = H - creditText.height - 50;
+              const maxY = 50;
+              if (creditText.y < minY) creditText.y = minY;
+              if (creditText.y > maxY) creditText.y = maxY;
+            });
+            // 顯示主畫面按鈕
+            const btn = this.add.text(W - 20, H - 20, '主畫面', {
+              fontFamily: 'a', fontSize: '24px', color: '#ffff00', backgroundColor: '#000', padding: { x: 10, y: 5 }
+            }).setOrigin(1, 1).setInteractive({ useHandCursor: true });
+            btn.on('pointerdown', () => this.scene.start('MenuScene'));
+          }
+        });
+      }
+    }
+
+    //---------------------------------------------------------------------------------------------
+
+
+
+
+
+    // 更新遊戲配置----------------------------------------------------------------------------------------------
+    const config = {
+      type: Phaser.AUTO,
+      width: 800,
+      height: 600,
+      backgroundColor: '#2d2d2d',
+      pixelArt: true,
+      physics: {
+        default: 'arcade',
+        arcade: { gravity: { y: 500 }, debug: false, debugShowBody: false, debugShowVelocity: false }
+      },
+      scene: [BootScene, MenuScene, StoryScene, ModeScene, Level1Scene, Level2Scene, Level3Scene, Level1Scene_mulit, Level2Scene_mulit, Level3Scene_mulit, MulitLevelSelectScene, SettingScene, EndStoryScene, CreditScene]
+    };
+
+    // 初始化遊戲
+    const game = new Phaser.Game(config);
+
+  </script>
+</body>
+
+</html>

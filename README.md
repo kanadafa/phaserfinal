@@ -2,6 +2,15 @@
 
 這是一個使用 Phaser 3 開發的多遊戲集合網站。
 
+## 遊戲列表
+
+- 少女歸途
+- Maze King
+- 獵人X蘋果
+- Lone Escape
+- 畫廊迷蹤
+- 女巫的藥水
+
 ## 專案結構
 
 ```
@@ -56,4 +65,4 @@
 - Phaser 3.60.0
 - 原生 JavaScript (ES6+)
 - HTML5
-- CSS3 
+- CSS3

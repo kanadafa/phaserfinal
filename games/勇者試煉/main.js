@@ -94,7 +94,7 @@ window.onload = function() {
         });
     }
 
-    showMainMenu();
+    Main.showMainMenu();
 };
 
 // 畫主選單

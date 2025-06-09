@@ -1,12 +1,12 @@
 // 遊戲配置列表
 const games = [
-    { name: '少女歸途', path: './games/少女歸途/index.html', pic: './games/少女歸途/pic.jpg' },
-    { name: 'Maze King', path: './games/Maze King/index.html', pic: './games/Maze King/pic.png' },
-    { name: 'Lone Escape', path: './games/Lone Escape-Descent into Darknes/MainGame.html', pic: './games/Lone Escape-Descent into Darknes/pic.png' },
-    { name: '畫廊迷蹤', path: './games/畫廊迷蹤/index.html', pic: './games/畫廊迷蹤/pic.png' },
-    { name: '女巫的藥水', path: './games/女巫的藥水/index.html', pic: './games/女巫的藥水/pic.png' },
-    { name: '獵人X蘋果', path: './games/獵人X蘋果/index.html', pic: './games/獵人X蘋果/pic.png' },
-    { name: '勇者試煉', path: './games/勇者試煉/index.html', pic: './games/勇者試煉/pic.png' }
+    { name: '少女歸途', path: './games/G02_少女歸途/index.html', pic: './games/G02_少女歸途/pic.jpg' },
+    { name: '女巫的藥水', path: './games/G03_女巫的藥水/index.html', pic: './games/G03_女巫的藥水/pic.png' },
+    { name: '勇者試煉', path: './games/G04_勇者試煉/index.html', pic: './games/G04_勇者試煉/pic.png' },
+    { name: 'Lone Escape', path: './games/G05_Lone Escape-Descent into Darkness/MainGame.html', pic: './games/G05_Lone Escape-Descent into Darkness/pic.png' },
+    { name: 'Maze King', path: './games/G06_Maze King/index.html', pic: './games/G06_Maze King/pic.png' },
+    { name: '獵人X蘋果', path: './games/G07_獵人X蘋果/index.html', pic: './games/G07_獵人X蘋果/pic.png' },
+    { name: '畫廊迷蹤', path: './games/G08_畫廊迷蹤/start.html', pic: './games/G08_畫廊迷蹤/pic.png' }
 ];
 
 let currentGame = null;
@@ -28,6 +28,10 @@ function createGameCards() {
         const card = document.createElement('li');
         card.className = 'game-card';
         card.addEventListener('click', () => loadGame(game));
+
+        // 從路徑中提取資料夾名稱作為 hover 提示文字
+        const folderName = game.path.split('/')[2];
+        card.title = folderName.replace(/-/g, ' '); // 將-替換為空格，使其更易讀
 
         const img = document.createElement('img');
         img.src = game.pic;

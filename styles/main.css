@@ -17,48 +17,65 @@ body {
     padding: 0;
     font-family: Arial, sans-serif;
     background: linear-gradient(135deg, #2193b0, #6dd5ed, #2193b0);
-    min-height: 100vh;
+    height: 100vh;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
-    overflow-y: hidden;
-    line-height: 1.6;
-    color: var(--text-color);
 }
 
 header {
     text-align: center;
-    padding: 20px;
     background: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(10px);
+    width: 100%;
+    box-sizing: border-box;
+    padding: 20px 0;
+    flex-shrink: 0;
 }
 
 h1 {
     color: white;
     margin: 0;
-    padding: 15px 0;
+    padding: 0;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
-    font-size: 2.5rem;
-    margin-bottom: 1rem;
-    font-weight: 600;
-    letter-spacing: 2px;
 }
 
-nav {
-    margin: 1.5rem 0;
-    padding: 0 1rem;
+main {
+    flex-grow: 1;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(70, 149, 163, 0.5);
 }
 
 #gameList {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 30px;
-    padding: 30px 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-evenly;
+    gap: 40px;
+    padding: 40px;
     list-style: none;
-    margin: 0 auto;
-    width: 90%;
-    max-width: 1600px;
-    height: calc(100vh - 100px);
-    align-content: center;
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    max-width: 2000px;
+    box-sizing: border-box;
+}
+
+.game-row {
+    display: grid;
+    gap: 50px;
+    width: 95%;
+}
+
+.game-row-top {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+.game-row-bottom {
+    grid-template-columns: repeat(4, 1fr);
 }
 
 .game-card {
@@ -71,7 +88,6 @@ nav {
     aspect-ratio: 16/9;
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    width: 100%;
 }
 
 .game-card:hover {
@@ -123,6 +139,7 @@ nav {
     color: white;
     opacity: 0;
     transition: opacity 0.4s ease;
+    text-align: center;
 }
 
 .game-card:hover .game-info {
@@ -134,14 +151,6 @@ nav {
     font-size: 1.3em;
     font-weight: 600;
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
-}
-
-main {
-    padding: 0;
-    margin: 0;
-    width: 100%;
-    height: 100vh;
-    position: relative;
 }
 
 #gameContainer {
@@ -156,10 +165,8 @@ main {
     display: block;
 }
 
-#gameContainer iframe {
-    border: none;
-    width: 100%;
-    height: 100%;
+.hidden {
+    display: none !important;
 }
 
 button {
@@ -176,29 +183,18 @@ button:hover {
 
 @media (max-width: 1200px) {
     #gameList {
+        display: grid;
         grid-template-columns: repeat(2, 1fr);
-        padding: 30px;
+    }
+    .game-row {
+        display: contents;
     }
 }
 
 @media (max-width: 768px) {
-    h1 {
-        font-size: 2rem;
-    }
-
     #gameList {
         grid-template-columns: 1fr;
         padding: 20px;
-        height: auto;
-        overflow-y: auto;
-    }
-    
-    body {
-        overflow-y: auto;
-    }
-
-    .game-card h2 {
-        font-size: 1.2rem;
     }
 }
 

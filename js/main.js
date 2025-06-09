@@ -62,17 +62,15 @@ function loadGame(game) {
     if (!document.getElementById('gameFrame')) {
         const iframe = document.createElement('iframe');
         iframe.id = 'gameFrame';
-        iframe.setAttribute('frameborder', '0');
-        iframe.setAttribute('allowfullscreen', 'true');
         gameContainer.appendChild(iframe);
     }
     
     const gameFrame = document.getElementById('gameFrame');
     gameFrame.src = game.path;
 
-    mainElement.classList.add('hidden');
-    gameContainer.classList.add('active');
-    header.classList.add('hidden');
+    mainElement.style.display = 'none';
+    header.style.display = 'none';
+    gameContainer.style.display = 'flex'; // 或者 'block'，取決於 #gameContainer 的內部佈局需求
 }
 
 function showMainMenu() {
@@ -84,9 +82,9 @@ function showMainMenu() {
     if (gameFrame) {
         gameFrame.src = 'about:blank';
     }
-    mainElement.classList.remove('hidden');
-    gameContainer.classList.remove('active');
-    header.classList.remove('hidden');
+    mainElement.style.display = 'flex';
+    header.style.display = 'block'; // 或者 'flex'，取決於 header 的佈局
+    gameContainer.style.display = 'none';
 }
 
 // 初始化

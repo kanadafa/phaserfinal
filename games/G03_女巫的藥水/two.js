@@ -4,7 +4,7 @@ function enemy4AtPlayer(enemy) {
     for (let i = 0; i < count; i++) {
         const ang = 2 * Math.PI / count * i;
         const b = bullets.create(enemy.x, enemy.y, 'Bullet').setCircle(bulletsize);
-        b.setTintFill(0x7944cf);
+        b.setTintFill(0xff8000);
         b.setVelocity(Math.cos(ang) * speed, Math.sin(ang) * speed);
     }
     this.sound.play('enemyShoot', {
@@ -29,7 +29,7 @@ function enemy5AtPlayer(enemy) {
         const sy = enemy.y + py * spread * i;
 
         const b = bullets.create(sx, sy, 'Bullet').setCircle(bulletsize);
-        b.setTintFill(0x7bbced);
+        b.setTintFill(0xff8000);
         b.setVelocity(ux * speed, uy * speed);
     }
     this.sound.play('enemyShoot', {

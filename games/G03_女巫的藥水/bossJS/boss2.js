@@ -202,7 +202,7 @@ function moveBoss2ToNextPosition(scene, count) {
 
 function dropSpears() {
     let x = Phaser.Math.Between(50, 750);
-    let spear = spearGroup.create(x, 30, 'spear').setScale(0.05).setRotation(Phaser.Math.DegToRad(180));;
+    let spear = spearGroup.create(x, 30, 'spear').setScale(0.05).setRotation(Phaser.Math.DegToRad(180)).setTint('0xd42424');
     spear.setCollideWorldBounds(true);
     spear.body.onWorldBounds = true;
     spear.body.world.on('worldbounds', function (body) {
@@ -219,7 +219,7 @@ function fireBoss2CircleBullets() {
     for (let i = 0; i < 12; i++) {
         let angle = Phaser.Math.DegToRad(i * 30);
         if (boss2) {
-            let bullet = spearGroup.create(boss2.x, boss2.y, 'boss2bullet').setScale(0.05);
+            let bullet = spearGroup.create(boss2.x, boss2.y, 'boss2bullet').setScale(0.05).setTint('0xd42424');
             bullet.setCollideWorldBounds(true);
             bullet.body.onWorldBounds = true;
             bullet.body.world.on('worldbounds', function (body) {
@@ -239,7 +239,7 @@ function fireSpearRing(scene) {
     let count = 12;
     for (let i = 0; i < count; i++) {
         let angle = Phaser.Math.DegToRad((360 / count) * i);
-        let spear = spearGroup.create(boss2.x, boss2.y, 'boss2bullet').setScale(0.05);
+        let spear = spearGroup.create(boss2.x, boss2.y, 'boss2bullet').setScale(0.05).setTint('0xd42424');
         spear.setCollideWorldBounds(true);
         spear.body.onWorldBounds = true;
         spear.body.world.on('worldbounds', function (body) {
@@ -291,7 +291,7 @@ function fireSurroundingBulletsAtPlayer(scene, bulletsPerSide = 1, margin = 30, 
 // 子彈生成並朝向玩家移動
 function spawnBulletTowardPlayer(scene, x, y, speed) {
     const angle = Phaser.Math.Angle.Between(x, y, player.x, player.y);
-    const bullet = spearGroup.create(x, y, 'boss2bullet').setScale(0.03);
+    const bullet = spearGroup.create(x, y, 'boss2bullet').setScale(0.03).setTint('0xd42424');
     bullet.setCollideWorldBounds(true);
     bullet.body.onWorldBounds = true;
     bullet.body.world.on('worldbounds', function (body) {
@@ -324,7 +324,7 @@ function fireSideBullets(scene) {
 
         // 發射兩顆子彈
         [leftAngle, rightAngle].forEach(angle => {
-            const bullet = spearGroup.create(boss2.x, boss2.y, 'boss2bullet').setScale(0.05);
+            const bullet = spearGroup.create(boss2.x, boss2.y, 'boss2bullet').setScale(0.05).setTint('0xd42424');
             bullet.setCollideWorldBounds(true);
             bullet.body.onWorldBounds = true;
             bullet.body.world.on('worldbounds', function (body) {
@@ -342,7 +342,7 @@ function fireCircularBullets(scene, x, y, count = 20, speed = 200) {
     atk1.play();
     for (let i = 0; i < count; i++) {
         const angle = (2 * Math.PI / count) * i;
-        const bullet = spearGroup.create(x, y, 'boss2bullet').setScale(0.05);
+        const bullet = spearGroup.create(x, y, 'boss2bullet').setScale(0.05).setTint('0xd42424');
         bullet.setCollideWorldBounds(true);
         bullet.body.onWorldBounds = true;
         bullet.body.world.on('worldbounds', function (body) {

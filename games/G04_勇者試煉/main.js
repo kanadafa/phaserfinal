@@ -80,18 +80,6 @@ canvas.addEventListener('click', function (e) {
 
 });
 
-// Main 模組：提供回主選單的能力
-const Main = (function () {
-  function showMainMenu() {
-    currentState = Gamestate.MENU;
-    drawMenu();
-  }
-
-  return {
-    showMainMenu
-  };
-})();
-
 window.onload = function() {
     // 初始化音樂
     AudioManager.initBGM();
@@ -106,7 +94,7 @@ window.onload = function() {
         });
     }
 
-    Main.showMainMenu();
+    showMainMenu();
 };
 
 // 畫主選單
@@ -138,3 +126,15 @@ function gameLoop() {
 
   requestAnimationFrame(gameLoop);
 }
+
+// Main 模組：提供回主選單的能力
+const Main = (function () {
+  function showMainMenu() {
+    currentState = Gamestate.MENU;
+    drawMenu();
+  }
+
+  return {
+    showMainMenu
+  };
+})();

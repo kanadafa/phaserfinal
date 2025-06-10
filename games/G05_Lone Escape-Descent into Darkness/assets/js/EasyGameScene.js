@@ -35,6 +35,8 @@ export default class EasyGameScene extends Phaser.Scene {
         this.load.image('GroundWallTilesetName', 'assets/MAP/A4.png');
         this.load.image('candle', 'assets/item/candle.png');
         this.load.audio('rushSound', 'assets/Sounds/monster_SFX/RUSH/RUSH_atk.mp3');
+        this.load.audio('mainBGM', 'assets/Sounds/BGM/Hollow Parade   Royalty Free Background Music   (Drum ’n’ Bass).mp3');
+
 
         for (let i = 1; i <= 5; i++) {
             this.load.image(`cabinet_${i}`, `assets/item/cabinet_${i}.png`);
@@ -276,6 +278,9 @@ export default class EasyGameScene extends Phaser.Scene {
         this.showTutorial(
             '🎮 操作說明 🎮\n\n使用 W A S D 移動角色\n按住 Shift 可加速奔跑！\n按 F 可互動啟動特殊機關\n\n👉 點擊滑鼠或按任意鍵開始遊戲'
         );
+
+        this.bgMusic = this.sound.add('mainBGM', { loop: true, volume: 0.07 });
+        this.bgMusic.play();
 
 
 
@@ -621,6 +626,14 @@ export default class EasyGameScene extends Phaser.Scene {
             }
             FL.updateTimerDisplay(this);
         }
+
+        this.events.on('shutdown', () => {
+            if (this.bgMusic) {
+                this.bgMusic.stop();
+                this.bgMusic.destroy();
+                this.bgMusic = null;
+            }
+        });
 
         // 教學物品偵測
         if (this.teachItem && Phaser.Math.Distance.Between(

@@ -558,7 +558,7 @@ function fireChainHeadBullet(scene) {
             const distance = Math.sqrt(dx * dx + dy * dy);
 
             if (distance >= 20) {
-                const chain = chainGroup.create(this.x, this.y, 'chainbullet').setScale(0.15);
+                const chain = chainGroup.create(this.x, this.y, 'chainbullet').setScale(0.15).setTint(0xff0000);
                 chain.setData('startTime', scene.time.now);
                 chain.setVelocity(0, 0);
                 chain.body.onWorldBounds = true;

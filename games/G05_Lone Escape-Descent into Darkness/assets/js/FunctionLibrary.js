@@ -386,8 +386,7 @@ function enterDoor(player, door) {
 
         // 进入休息室前，也先加载一张新地图（可以是任意 mapKey，也可以专门给休息室留一张空白地图）
         // 这里随便 pick 一张，目的只是让 tilemap 正常切过去（即使你在休息室逻辑里可能不会真正用到它）
-        const nextConfig = Phaser.Math.RND.pick(this.mapConfigs);
-        pickAndSetupMap(this, nextConfig.mapKey, this.mapConfigs);
+        pickAndSetupMap(this, 'Gallery', this.mapConfigs);
 
         // 生成「休息室」的内容
         createRestRoom(this);
@@ -652,7 +651,7 @@ function createRoom(scene, template) {
 
     if (scene.roomCount >= 10 && scene.rushRecentlyTriggered === 0 && !scene.isRestRoom) {
         let rushChance = 0;
-        if (scene.roomCount <= 50) rushChance = 0.08; // 8%
+        if (scene.roomCount <= 50) rushChance = 0.1; // 8%
         else if (scene.roomCount <= 100) rushChance = 0.25; // 15%
         else rushChance = 0.40; // 20%
 

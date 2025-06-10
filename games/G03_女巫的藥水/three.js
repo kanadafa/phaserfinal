@@ -7,7 +7,7 @@ function enemy7AtPlayer(enemy) {
     for (let i = -1.5; i <= 1.5; i++) {
         const offsetX = i * spacing;
         const n = bullets.create(enemy.x + i * spacing, enemy.y, 'needle')
-        n.setTintFill(0xff0000);
+        n.setTintFill(0x1e157d);
         n.setCircle(bulletsize * 0.4, bulletsize * 0.2, bulletsize * 6);
         n.setData('offsetX', offsetX);
         n.setData('followEnemy', enemy);
@@ -120,7 +120,7 @@ function enemy9AtPlayer(enemy) {
                 const fAng = base + (Math.PI / 2) * j;
                 const f = bullets.create(n.x, n.y, 'Bullet')
                     .setCircle(bulletsize)
-                    .setTintFill(0xff6969);
+                    .setTintFill(0x0003bf);
                 f.setVelocity(Math.cos(fAng) * fragSpeed, Math.sin(fAng) * fragSpeed);
             }
             n.destroy();

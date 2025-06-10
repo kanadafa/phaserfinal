@@ -36,7 +36,7 @@
         //player
         let keys, bombKey;
         let lastFired = 0;
-        let hearts = 100, maxHearts = 100;
+        let hearts = 10, maxHearts = 100;
         let bombs = 5, maxBombs = 5;
         let scoreP = 0;
         let heartIcons = [];
@@ -223,13 +223,16 @@
             spreadShot = this.add.text(350, 300, "▶ 主子彈 +1", style).setInteractive().setVisible(false);
             missileUpgrade = this.add.text(350, 330, "▶ 副子彈 +1", style).setInteractive().setVisible(false);
             rapidFire = this.add.text(350, 360, "▶ 提高連射速度", style).setInteractive().setVisible(false);
-
+            mark2 = this.add.rectangle(0, 0, 800, 1200)
+                .setOrigin(0, 0)
+                .setDepth(999);
             // 定義一個共用的函數，當選擇任一能力後，移除所有選項並開始主遊戲
             const startGame = () => {
                 spreadShot.setVisible(false);      // 移除擴散子彈選項
                 missileUpgrade.setVisible(false);  // 移除導彈選項
                 rapidFire.setVisible(false);       // 移除連射速度選項
                 powertext.setVisible(false);
+                mark2.setVisible(false);
             };
 
 
@@ -1427,6 +1430,7 @@
             missileUpgrade.setVisible(true);
             rapidFire.setVisible(true);
             powertext.setVisible(true);
+            mark2.setVisible(true);
         }
         // showUpgradeMenu 用一次就顯示三個選項
         function showUpgradeMenu(scene, onSelect) {

@@ -5,8 +5,26 @@
     <title>遊戲</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
     <style>
-        body { margin: 0; padding: 50px; }
-        canvas { display: block; margin: auto; }
+        /* 移除所有邊距和留白，讓遊戲佔滿整個視窗 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden; /* 防止滾動條出現 */
+            background-color: #000; /* 設置黑色背景 */
+        }
+        
+        canvas {
+            display: block;
+            width: 100vw !important; /* 強制佔滿視窗寬度 */
+            height: 100vh !important; /* 強制佔滿視窗高度 */
+            object-fit: cover; /* 保持比例並填滿容器 */
+        }
     </style>
 </head>
 <body>
@@ -19,22 +37,186 @@ class LobbyScene extends Phaser.Scene {
 
     preload() {
         // 可預先載入背景圖等資源，避免切換時閃爍
+        this.load.image('background2', 'maze_cover.png');
+        
         this.load.image('background', '初始背景.png');
+        // 載入背景音樂
+        this.load.audio('bgMusic', 'videoplayback.webm');
+        
+        // 獲取實際畫布尺寸
+        const gameWidth = this.sys.game.config.width;
+        const gameHeight = this.sys.game.config.height;
+        
+        // 顯示載入進度
+        let loadingText = this.add.text(gameWidth/2, gameHeight/2, '載入中...', {
+            fontSize: '32px',
+            fill: '#ffffff'
+        }).setOrigin(0.5);
+        
+        // 添加載入進度處理
+        this.load.on('progress', (value) => {
+            loadingText.setText(`載入中: ${Math.floor(value * 100)}%`);
+        });
+        
+        // 添加載入完成處理
+        this.load.on('complete', () => {
+            loadingText.destroy();
+            console.log('大廳場景資源載入完成');
+        });
+        
+        // 添加錯誤處理
+        this.load.on('loaderror', (fileObj) => {
+            console.error('載入失敗:', fileObj.src);
+            loadingText.setText(`載入失敗: ${fileObj.key}\n請重新整理頁面`);
+            loadingText.setFill('#ff0000');
+        });
     }
 
     create() {
-        // 加入背景
-        this.add.image(0, 0, 'background').setOrigin(0, 0).setDisplaySize(800, 600);
-        // 遊戲標題
-        this.add.text(400, 180, '我的 RPG 遊戲', { fontSize: '48px', fill: '#fff' }).setOrigin(0.5);
-        // 開始按鈕
-        const startBtn = this.add.text(400, 350, '開始遊戲', { fontSize: '36px', fill: '#00ffcc', backgroundColor: '#222', padding: { x: 30, y: 10 } })
-            .setOrigin(0.5)
-            .setInteractive({ useHandCursor: true });
+        // 獲取實際畫布尺寸
+        const gameWidth = this.sys.game.config.width;
+        const gameHeight = this.sys.game.config.height;
+        
+        // 加入背景，讓它填滿整個畫布
+        this.coverImage = this.add.image(0, 0, 'background2').setOrigin(0, 0).setDisplaySize(gameWidth, gameHeight);
+
+        
+        // 初始化背景音樂
+        this.bgMusic = this.sound.add('bgMusic', {
+            volume: 0.3,  // 設置音量為30%
+            loop: true    // 循環播放
+        });
+        
+        // 嘗試播放背景音樂
+        try {
+            this.bgMusic.play();
+            console.log('背景音樂開始播放');
+        } catch (error) {
+            console.warn('背景音樂播放失敗:', error);
+        }
+        
+        // 遊戲標題 - 根據畫布尺寸調整位置
+        // 移除我的 RPG 遊戲文字
+        
+        // 開始按鈕 - 根據畫布尺寸調整位置和大小
+        const startBtn = this.add.text(gameWidth / 2.15, gameHeight * 0.47, '進入迷宮', {
+    fontSize: Math.min(gameWidth, gameHeight) * 0.05 + 'px',
+    fill: '#aaf0ff',
+    fontFamily: 'Arial',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    padding: { x: 40, y: 16 }
+})
+.setOrigin(0.5).setInteractive({ useHandCursor: true });
+        
         // 按下按鈕切換到 GameScene
         startBtn.on('pointerdown', () => {
-            this.scene.start('GameScene');
+            this.coverImage.setVisible(false); 
+            // 將背景音樂傳遞給遊戲場景
+            
+            
+            this.scene.start('GameScene', { bgMusic: this.bgMusic });
         });
+        
+        // 添加音樂控制按鈕
+        this.createMusicControls();
+        startBtn
+    .on('pointerover', () => {
+        startBtn.setStyle({
+            fontSize: Math.min(gameWidth, gameHeight) * 0.06 + 'px',
+            fill: '#ffff99',
+            backgroundColor: 'rgba(50,50,50,0.8)'
+        });
+        startBtn.setScale(1.05); // 字體整體放大
+    })
+    .on('pointerout', () => {
+        startBtn.setStyle({
+            fontSize: Math.min(gameWidth, gameHeight) * 0.05 + 'px',
+            fill: '#aaf0ff',
+            backgroundColor: 'rgba(0,0,0,0.5)'
+        });
+        startBtn.setScale(1); // 還原大小
+    })
+    .on('pointerdown', () => {
+        startBtn.setScale(0.95); // 點下去稍微縮小
+    })
+    .on('pointerup', () => {
+        startBtn.setScale(1); // 放開還原
+        this.scene.start('GameScene'); // 切場景
+        this.scene.stop('LobbyScene'); // 關閉封面
+    });
+    
+    }
+    
+    // 創建音樂控制界面
+    createMusicControls() {
+        const gameWidth = this.sys.game.config.width;
+        const gameHeight = this.sys.game.config.height;
+        
+        // 音樂開關按鈕 - 響應式位置
+        this.musicToggleBtn = this.add.text(gameWidth * 0.06, gameHeight * 0.08, '🔊 音樂: 開', {
+            fontSize: Math.min(gameWidth, gameHeight) * 0.033 + 'px',
+            fill: '#ffffff',
+            backgroundColor: '#333333',
+            padding: { x: 10, y: 5 }
+        }).setOrigin(0, 0).setInteractive({ useHandCursor: true });
+        
+        this.musicToggleBtn.on('pointerdown', () => {
+            this.toggleMusic();
+        });
+        
+        // 音量控制說明
+        this.add.text(gameWidth * 0.06, gameHeight * 0.15, '音量控制: ↑/↓ 鍵', {
+            fontSize: Math.min(gameWidth, gameHeight) * 0.027 + 'px',
+            fill: '#cccccc'
+        }).setOrigin(0, 0);
+        
+        // 當前音量顯示
+        this.volumeText = this.add.text(gameWidth * 0.06, gameHeight * 0.18, `音量: ${Math.floor(this.bgMusic.volume * 100)}%`, {
+            fontSize: Math.min(gameWidth, gameHeight) * 0.027 + 'px',
+            fill: '#ffffff'
+        }).setOrigin(0, 0);
+        
+        // 添加鍵盤控制
+        this.upKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.UP);
+        this.downKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.DOWN);
+        this.mKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.M);
+    }
+    
+    // 切換音樂開關
+    toggleMusic() {
+        if (this.bgMusic.isPlaying) {
+            this.bgMusic.pause();
+            this.musicToggleBtn.setText('🔇 音樂: 關');
+            console.log('背景音樂已暫停');
+        } else {
+            this.bgMusic.resume();
+            this.musicToggleBtn.setText('🔊 音樂: 開');
+            console.log('背景音樂已恢復');
+        }
+    }
+    
+    update() {
+        // 音量控制
+        if (Phaser.Input.Keyboard.JustDown(this.upKey)) {
+            this.adjustVolume(0.1);
+        }
+        if (Phaser.Input.Keyboard.JustDown(this.downKey)) {
+            this.adjustVolume(-0.1);
+        }
+        
+        // M鍵快速切換音樂
+        if (Phaser.Input.Keyboard.JustDown(this.mKey)) {
+            this.toggleMusic();
+        }
+    }
+    
+    // 調整音量
+    adjustVolume(change) {
+        let newVolume = this.bgMusic.volume + change;
+        newVolume = Math.max(0, Math.min(1, newVolume)); // 限制在0-1之間
+        this.bgMusic.setVolume(newVolume);
+        this.volumeText.setText(`音量: ${Math.floor(newVolume * 100)}%`);
+        console.log(`音量調整為: ${Math.floor(newVolume * 100)}%`);
     }
 }
 
@@ -45,6 +227,13 @@ class GameScene extends Phaser.Scene {
         // 這裡不初始化屬性，統一在 create 內
         this.resourcesLoaded = false; // 標記資源是否已載入完成
         this.resourcesError = false;  // 標記載入過程中是否有錯誤
+    }
+    
+    // 接收從大廳場景傳遞的數據
+    init(data) {
+        // 接收背景音樂物件
+        this.bgMusic = data.bgMusic || null;
+        console.log('GameScene 接收到背景音樂:', this.bgMusic ? '是' : '否');
     }
 
     preload() {
@@ -61,8 +250,23 @@ class GameScene extends Phaser.Scene {
         this.load.image('skill1', './技能一.png'); // 載入技能一圖片
         this.load.image('skill2', './技能二.png'); // 載入技能二圖片
         
+        // 載入音效
+        this.load.audio('slashSound', './揮劍.mp3'); // 載入揮劍音效
+        this.load.audio('levelUpSound', './升級.mp3'); // 載入升級音效
+        this.load.audio('skill1Sound', './大爆炸.mp3'); // 載入技能一音效
+        this.load.audio('skill2Sound', './雷射光.mp3'); // 載入技能二音效
+        
+        // 如果沒有背景音樂，則載入音檔
+        if (!this.bgMusic) {
+            this.load.audio('bgMusic', 'videoplayback.webm');
+        }
+        
+        // 獲取實際畫布尺寸
+        const gameWidth = this.sys.game.config.width;
+        const gameHeight = this.sys.game.config.height;
+        
         // 顯示載入進度
-        let loadingText = this.add.text(400, 300, '載入中...', {
+        let loadingText = this.add.text(gameWidth/2, gameHeight/2, '載入中...', {
             fontSize: '32px',
             fill: '#ffffff'
         }).setOrigin(0.5);
@@ -89,7 +293,7 @@ class GameScene extends Phaser.Scene {
             this.resourcesError = true;
             
             // 添加重試按鈕
-            const retryBtn = this.add.text(400, 400, '重新整理', { 
+            const retryBtn = this.add.text(gameWidth/2, gameHeight * 0.67, '重新整理', { 
                 fontSize: '28px', 
                 fill: '#ffffff',
                 backgroundColor: '#550000',
@@ -116,6 +320,35 @@ class GameScene extends Phaser.Scene {
             // 延遲 100ms 後再次檢查
             setTimeout(() => this.create(), 100);
             return;
+        }
+        
+        // 獲取實際畫布尺寸
+        const gameWidth = this.sys.game.config.width;
+        const gameHeight = this.sys.game.config.height;
+        
+        // 初始化背景音樂（如果沒有從大廳場景傳遞過來）
+        if (!this.bgMusic) {
+            this.bgMusic = this.sound.add('bgMusic', {
+                volume: 0.3,
+                loop: true
+            });
+            
+            try {
+                this.bgMusic.play();
+                console.log('遊戲場景背景音樂開始播放');
+            } catch (error) {
+                console.warn('背景音樂播放失敗:', error);
+            }
+        } else {
+            // 確保音樂繼續播放
+            if (!this.bgMusic.isPlaying) {
+                try {
+                    this.bgMusic.resume();
+                    console.log('繼續播放背景音樂');
+                } catch (error) {
+                    console.warn('恢復背景音樂播放失敗:', error);
+                }
+            }
         }
         
         // 記錄遊戲開始時間
@@ -174,31 +407,37 @@ class GameScene extends Phaser.Scene {
         this.skillEffects = this.physics.add.group();
         
         // --- 場景物件建立 ---
-        this.add.image(0, 0, 'background').setOrigin(0, 0).setDisplaySize(800, 600);
-        // 牆壁
+        this.add.image(0, 0, 'background').setOrigin(0, 0).setDisplaySize(gameWidth, gameHeight);
+        // 牆壁 - 根據畫布尺寸調整
         this.walls = this.physics.add.staticGroup();
-        for (let i = 0; i < 20; i++) {
-            this.walls.create(25 + i * 50, 600 - 4, 'wall').body.setSize(64, 8).setOffset(32, 60);
-            this.walls.create(5, 5 + i * 50, 'wall').setAngle(90).body.setSize(8, 64).setOffset(60, 32);
+        const wallCount = Math.ceil(gameWidth / 50);
+        const wallCountVertical = Math.ceil(gameHeight / 50);
+        
+        for (let i = 0; i < wallCount; i++) {
+            this.walls.create(25 + i * 50, gameHeight - 4, 'wall').body.setSize(64, 8).setOffset(32, 60);
             this.walls.create(25 + i * 50, 4, 'wall').setRotation(Math.PI).body.setSize(64, 8).setOffset(32, 60);
-            this.walls.create(795, 5 + i * 50, 'wall').setAngle(270).body.setSize(8, 64).setOffset(60, 32);
+        }
+        
+        for (let i = 0; i < wallCountVertical; i++) {
+            this.walls.create(5, 5 + i * 50, 'wall').setAngle(90).body.setSize(8, 64).setOffset(60, 32);
+            this.walls.create(gameWidth - 5, 5 + i * 50, 'wall').setAngle(270).body.setSize(8, 64).setOffset(60, 32);
         }
         
         // 通道/門 - 修改為物理群組
         this.doors = this.physics.add.group();
         
-        // 玩家
-        this.player = this.physics.add.sprite(400, 300, 'hero').setScale(1.4).setCollideWorldBounds(true);
+        // 玩家 - 根據畫布尺寸調整初始位置
+        this.player = this.physics.add.sprite(gameWidth/2, gameHeight/2, 'hero').setScale(1.4).setCollideWorldBounds(true);
         
-        // 能量飲料
-        this.energyIcon = this.add.image(750, 550, 'energy').setScale(2).setVisible(false).setInteractive();
+        // 能量飲料 - 響應式位置
+        this.energyIcon = this.add.image(gameWidth * 0.94, gameHeight * 0.92, 'energy').setScale(2).setVisible(false).setInteractive();
         this.energyIcon.on('pointerdown', () => {
             if (!this.energyIcon.visible || this.isGameOver) return;
             this.useEnergyDrink();
         });
         
         // 添加能量飲料提示
-        this.energyPrompt = this.add.text(750, 520, '按 R 使用', {
+        this.energyPrompt = this.add.text(gameWidth * 0.94, gameHeight * 0.87, '按 R 使用', {
             fontSize: '14px',
             fill: '#ffffff',
             backgroundColor: '#000000',
@@ -211,23 +450,29 @@ class GameScene extends Phaser.Scene {
     this.anims.create({ key: 'right', frames: this.anims.generateFrameNumbers('hero', { start: 6, end: 8 }), frameRate: 10, repeat: -1 });
     this.anims.create({ key: 'up', frames: this.anims.generateFrameNumbers('hero', { start: 9, end: 11 }), frameRate: 10, repeat: -1 });
     this.anims.create({ key: 'slime_move', frames: this.anims.generateFrameNumbers('slime', { start: 0, end: 3 }), frameRate: 6, repeat: -1 });
-        // 血量條
-        this.healthText = this.add.text(230, 18, `HP: ${this.playerHealth}`, { fontSize: '16px', fill: '#fff' });
+        // 血量條 - 響應式位置
+        this.healthText = this.add.text(gameWidth * 0.29, gameHeight * 0.03, `HP: ${this.playerHealth}`, { fontSize: '16px', fill: '#fff' });
         this.healthBar = this.add.graphics();
         this.updateHealthBar();
         this.slimeHealthBar = this.add.graphics();
         this.updateSlimeHealthBar();
         
-        // 經驗值與等級顯示
-        this.levelText = this.add.text(20, 50, `等級: ${this.playerLevel}`, { fontSize: '16px', fill: '#fff' });
-        this.expText = this.add.text(20, 70, `經驗: ${this.playerExp}/${this.expToNextLevel}`, { fontSize: '16px', fill: '#fff' });
+        // 經驗值與等級顯示 - 響應式位置
+        this.levelText = this.add.text(gameWidth * 0.025, gameHeight * 0.083, `等級: ${this.playerLevel}`, { fontSize: '16px', fill: '#fff' });
+        this.expText = this.add.text(gameWidth * 0.025, gameHeight * 0.117, `經驗: ${this.playerExp}/${this.expToNextLevel}`, { fontSize: '16px', fill: '#fff' });
         this.expBar = this.add.graphics();
         this.updateExpBar();
         
-        // 攻擊力顯示
-        this.attackText = this.add.text(20, 110, `攻擊力: ${this.playerAttack}`, { fontSize: '16px', fill: '#ff9900' });
+        // 攻擊力顯示 - 響應式位置
+        this.attackText = this.add.text(gameWidth * 0.025, gameHeight * 0.183, `攻擊力: ${this.playerAttack}`, { fontSize: '16px', fill: '#ff9900' });
         
-        // 劍氣攻擊
+        // 初始化音效
+        this.slashSound = this.sound.add('slashSound', { volume: 0.5 }); // 初始化揮劍音效
+        this.levelUpSound = this.sound.add('levelUpSound', { volume: 0.6 }); // 初始化升級音效
+        this.skill1Sound = this.sound.add('skill1Sound', { volume: 0.5 }); // 初始化技能一音效
+        this.skill2Sound = this.sound.add('skill2Sound', { volume: 0.5 }); // 初始化技能二音效
+        
+        // 劍氣攻擊 
         this.slashes = this.physics.add.group();
         this.spaceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
         this.cursors = this.input.keyboard.createCursorKeys();
@@ -242,8 +487,8 @@ class GameScene extends Phaser.Scene {
         // 添加 R 鍵用於使用能量飲料
         this.rKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R);
         
-        // 添加門交互提示文本
-        this.doorPrompt = this.add.text(400, 500, '按 E 進入門', { 
+        // 添加門交互提示文本 - 響應式位置
+        this.doorPrompt = this.add.text(gameWidth/2, gameHeight * 0.83, '按 E 進入門', { 
             fontSize: '18px', 
             fill: '#ffffff',
             backgroundColor: '#000000',
@@ -258,13 +503,17 @@ class GameScene extends Phaser.Scene {
         // 確保小地圖在一開始就顯示
         this.drawMiniMap();
 
-        // 添加小地圖標題和邊框，確保它始終顯示在頂層
-        this.add.rectangle(685, 130, 125, 125, 0x000000, 0.7).setDepth(9);
-        this.add.text(625, 80, '地圖', { fontSize: '18px', fill: '#ffffff' }).setDepth(10);
+        // 添加小地圖標題和邊框，確保它始終顯示在頂層 - 響應式位置
+        // this.add.rectangle(gameWidth * 0.856, gameHeight * 0.217, 125, 125, 0x000000, 0.7).setDepth(9);
+        // this.add.text(gameWidth * 0.781, gameHeight * 0.133, '地圖', { fontSize: '18px', fill: '#ffffff' }).setDepth(10);
     }
 
     // --- 房間內容隨機生成 ---
     generateRoom(x, y) {
+        // 獲取實際畫布尺寸
+        const gameWidth = this.sys.game.config.width;
+        const gameHeight = this.sys.game.config.height;
+        
         // 記錄房間種子，確保相同座標生成相同內容
         const roomSeed = x * 100 + y;
         this.random = new Phaser.Math.RandomDataGenerator([roomSeed]);
@@ -316,7 +565,7 @@ class GameScene extends Phaser.Scene {
         this.drawMiniMap();
         
         // 顯示房間座標
-        const roomCoord = this.add.text(700, 570, `房間: (${x},${y})${(x === this.bossRoomX && y === this.bossRoomY) ? ' [BOSS]' : ''}`, {
+        const roomCoord = this.add.text(gameWidth * 0.94, gameHeight * 0.92, `房間: (${x},${y})${(x === this.bossRoomX && y === this.bossRoomY) ? ' [BOSS]' : ''}`, {
             fontSize: '16px',
             fill: '#ffffff',
             backgroundColor: '#000000',
@@ -339,12 +588,16 @@ class GameScene extends Phaser.Scene {
     generateBossRoom() {
         console.log("正在生成Boss房間...");
         
+        // 獲取實際畫布尺寸
+        const gameWidth = this.sys.game.config.width;
+        const gameHeight = this.sys.game.config.height;
+        
         // 確保Boss只生成一次
         if (this.bossDefeated) {
             console.log("Boss已被擊敗，顯示勝利提示");
             // Boss已被擊敗，不再生成
-            const victoryMessage = this.add.text(400, 300, '這個房間曾經有一個強大的Boss...\n但已被你擊敗了！', {
-                fontSize: '24px',
+            const victoryMessage = this.add.text(gameWidth/2, gameHeight * 0.3, '這個房間曾經有一個強大的Boss...\n但已被你擊敗了！', {
+                fontSize: Math.min(gameWidth, gameHeight) * 0.08 + 'px',
                 fill: '#ffff00',
                 stroke: '#000000',
                 strokeThickness: 4,
@@ -354,7 +607,7 @@ class GameScene extends Phaser.Scene {
             // 添加一些光效
             const light = this.add.graphics();
             light.fillStyle(0xffff00, 0.2);
-            light.fillCircle(400, 300, 150);
+            light.fillCircle(gameWidth/2, gameHeight/2, 150);
             
             // 發光效果動畫
             this.tweens.add({
@@ -420,7 +673,7 @@ class GameScene extends Phaser.Scene {
         this.hasBossSpawned = true; // 標記Boss已生成
         
         // 創建Boss
-        this.boss = this.physics.add.sprite(400, 300, 'boss')
+        this.boss = this.physics.add.sprite(gameWidth/2, gameHeight/2, 'boss')
             .setScale(0.5)
             .setCollideWorldBounds(true);
             
@@ -461,7 +714,7 @@ class GameScene extends Phaser.Scene {
         // 添加一些入場特效
         const ring = this.add.graphics();
         ring.lineStyle(5, 0xff0000, 1);
-        ring.strokeCircle(400, 300, 150);
+        ring.strokeCircle(gameWidth/2, gameHeight/2, 150);
         
         this.tweens.add({
             targets: ring,
@@ -703,14 +956,17 @@ class GameScene extends Phaser.Scene {
         // 標記遊戲結束，避免其他更新邏輯執行
         this.isGameOver = true;
         
+        const gameWidth = this.sys.game.config.width;
+        const gameHeight = this.sys.game.config.height;
+        
         // 背景暗化
-        const overlay = this.add.rectangle(0, 0, 800, 600, 0x000000, 0.7)
+        const overlay = this.add.rectangle(0, 0, gameWidth, gameHeight, 0x000000, 0.7)
             .setOrigin(0)
             .setDepth(100);
         
         // 勝利標題
-        const victoryTitle = this.add.text(400, 150, '恭喜通關!', {
-            fontSize: '64px',
+        const victoryTitle = this.add.text(gameWidth/2, gameHeight * 0.25, '恭喜通關!', {
+            fontSize: Math.min(gameWidth, gameHeight) * 0.11 + 'px',
             fill: '#ffff00',
             fontStyle: 'bold',
             stroke: '#000000',
@@ -720,7 +976,7 @@ class GameScene extends Phaser.Scene {
         // 添加勝利光環效果
         const victoryLight = this.add.graphics();
         victoryLight.fillStyle(0xffff00, 0.3);
-        victoryLight.fillCircle(400, 150, 100);
+        victoryLight.fillCircle(gameWidth/2, gameHeight * 0.25, 100);
         victoryLight.setDepth(100);
         
         this.tweens.add({
@@ -745,12 +1001,12 @@ class GameScene extends Phaser.Scene {
             }
             
             // 玩家數據
-            const statsText = this.add.text(400, 250, 
+            const statsText = this.add.text(gameWidth/2, gameHeight * 0.42, 
                 `最終等級: ${this.playerLevel}\n` +
                 `最終攻擊力: ${this.playerAttack}\n` +
                 `剩餘生命值: ${this.playerHealth}\n` +
                 `遊戲時間: ${minutes}分${seconds}秒`, {
-                    fontSize: '24px',
+                    fontSize: Math.min(gameWidth, gameHeight) * 0.04 + 'px',
                     fill: '#ffffff',
                     align: 'center',
                     stroke: '#000000', 
@@ -767,8 +1023,8 @@ class GameScene extends Phaser.Scene {
             }
             
             if (achievementText) {
-                const achievements = this.add.text(400, 350, achievementText, {
-                    fontSize: '20px',
+                const achievements = this.add.text(gameWidth/2, gameHeight * 0.58, achievementText, {
+                    fontSize: Math.min(gameWidth, gameHeight) * 0.033 + 'px',
                     fill: '#00ffff',
                     align: 'center',
                     stroke: '#000000', 
@@ -780,8 +1036,8 @@ class GameScene extends Phaser.Scene {
         }
         
         // 重新開始按鈕
-        const restartBtn = this.add.text(400, 450, '再次遊玩', {
-            fontSize: '32px',
+        const restartBtn = this.add.text(gameWidth/2, gameHeight * 0.75, '再次遊玩', {
+            fontSize: Math.min(gameWidth, gameHeight) * 0.053 + 'px',
             fill: '#00ffff',
             backgroundColor: '#333333',
             padding: { x: 20, y: 10 }
@@ -814,9 +1070,12 @@ class GameScene extends Phaser.Scene {
 
     // --- 添加房間通道/門 ---
     addDoors(x, y) {
+        const gameWidth = this.sys.game.config.width;
+        const gameHeight = this.sys.game.config.height;
+        
         // 上門 (y-1)
         if (y > 0) {
-            const topDoor = this.doors.create(400, 30, 'door').setScale(1.7);
+            const topDoor = this.doors.create(gameWidth/2, 30, 'door').setScale(1.7);
             topDoor.setAngle(0);
             topDoor.setOrigin(0.5, 0.5);
             topDoor.setTint(0x00ffff);
@@ -834,7 +1093,7 @@ class GameScene extends Phaser.Scene {
             });
             
             // 添加上方門的提示文字
-            const topText = this.add.text(400, 60, '↑ 北方', { 
+            const topText = this.add.text(gameWidth/2, 60, '↑ 北方', { 
                 fontSize: '14px', 
                 fill: '#ffffff',
                 backgroundColor: '#000000',
@@ -855,7 +1114,7 @@ class GameScene extends Phaser.Scene {
         
         // 下門 (y+1)
         if (y < this.mapSize - 1) {
-            const bottomDoor = this.doors.create(400, 570, 'door').setScale(1.7);
+            const bottomDoor = this.doors.create(gameWidth/2, gameHeight - 30, 'door').setScale(1.7);
             bottomDoor.setAngle(180);
             bottomDoor.setOrigin(0.5, 0.5);
             bottomDoor.setTint(0x00ffff);
@@ -873,7 +1132,7 @@ class GameScene extends Phaser.Scene {
             });
             
             // 添加下方門的提示文字
-            const bottomText = this.add.text(400, 540, '↓ 南方', { 
+            const bottomText = this.add.text(gameWidth/2, gameHeight - 60, '↓ 南方', { 
                 fontSize: '14px', 
                 fill: '#ffffff',
                 backgroundColor: '#000000',
@@ -894,7 +1153,7 @@ class GameScene extends Phaser.Scene {
         
         // 左門 (x-1)
         if (x > 0) {
-            const leftDoor = this.doors.create(30, 300, 'door').setScale(1.7);
+            const leftDoor = this.doors.create(30, gameHeight/2, 'door').setScale(1.7);
             leftDoor.setAngle(-90);
             leftDoor.setOrigin(0.5, 0.5);
             leftDoor.setTint(0x00ffff);
@@ -912,7 +1171,7 @@ class GameScene extends Phaser.Scene {
             });
             
             // 添加左方門的提示文字
-            const leftText = this.add.text(60, 300, '← 西方', { 
+            const leftText = this.add.text(60, gameHeight/2, '← 西方', { 
                 fontSize: '14px', 
                 fill: '#ffffff',
                 backgroundColor: '#000000',
@@ -933,7 +1192,7 @@ class GameScene extends Phaser.Scene {
         
         // 右門 (x+1)
         if (x < this.mapSize - 1) {
-            const rightDoor = this.doors.create(770, 300, 'door').setScale(1.7);
+            const rightDoor = this.doors.create(gameWidth - 30, gameHeight/2, 'door').setScale(1.7);
             rightDoor.setAngle(90);
             rightDoor.setOrigin(0.5, 0.5);
             rightDoor.setTint(0x00ffff);
@@ -951,7 +1210,7 @@ class GameScene extends Phaser.Scene {
             });
             
             // 添加右方門的提示文字
-            const rightText = this.add.text(740, 300, '東方 →', { 
+            const rightText = this.add.text(gameWidth - 60, gameHeight/2, '東方 →', { 
                 fontSize: '14px', 
                 fill: '#ffffff',
                 backgroundColor: '#000000',
@@ -979,9 +1238,13 @@ class GameScene extends Phaser.Scene {
         // 保存當前可交互的門
         this.currentDoor = door;
         
+        // 獲取實際畫布尺寸
+        const gameWidth = this.sys.game.config.width;
+        const gameHeight = this.sys.game.config.height;
+        
         // 設置提示文字的位置
-        let promptX = 400;
-        let promptY = 500;
+        let promptX = gameWidth/2;
+        let promptY = gameHeight * 0.83;
         
         // 根據門的方向調整提示位置
         switch(door.doorDirection) {
@@ -1032,9 +1295,13 @@ class GameScene extends Phaser.Scene {
     
     // 經驗值條更新
     updateExpBar() {
+        // 獲取實際畫布尺寸
+        const gameWidth = this.sys.game.config.width;
+        const gameHeight = this.sys.game.config.height;
+        
         this.expBar.clear();
-        this.expBar.fillStyle(0x505050).fillRect(20, 90, 200, 10); // 背景條
-        this.expBar.fillStyle(0x00ffff).fillRect(20, 90, 200 * (this.playerExp / this.expToNextLevel), 10); // 前景條
+        this.expBar.fillStyle(0x505050).fillRect(gameWidth * 0.025, gameHeight * 0.15, 200, 10); // 背景條
+        this.expBar.fillStyle(0x00ffff).fillRect(gameWidth * 0.025, gameHeight * 0.15, 200 * (this.playerExp / this.expToNextLevel), 10); // 前景條
         this.expText.setText(`經驗: ${this.playerExp}/${this.expToNextLevel}`);
     }
     
@@ -1069,6 +1336,18 @@ class GameScene extends Phaser.Scene {
     
     // 角色升級
     levelUp() {
+        // 獲取實際畫布尺寸
+        const gameWidth = this.sys.game.config.width;
+        const gameHeight = this.sys.game.config.height;
+        
+        // 播放升級音效
+        try {
+            this.levelUpSound.play();
+            console.log('播放升級音效');
+        } catch (error) {
+            console.warn('播放升級音效失敗:', error);
+        }
+        
         this.playerLevel++;
         this.playerExp -= this.expToNextLevel;
         // 增加下一級所需經驗
@@ -1089,7 +1368,7 @@ class GameScene extends Phaser.Scene {
         this.cameras.main.flash(500, 255, 255, 0); // 黃色閃光
         
         // 升級文字
-        const levelUpText = this.add.text(400, 300, '升級！', {
+        const levelUpText = this.add.text(gameWidth/2, gameHeight/2, '升級！', {
             fontSize: '48px',
             fill: '#ffff00',
             fontStyle: 'bold',
@@ -1098,7 +1377,7 @@ class GameScene extends Phaser.Scene {
         }).setOrigin(0.5).setDepth(100);
         
         // 顯示升級獲得的提升
-        const bonusText = this.add.text(400, 350, `生命值上限 +20\n攻擊力 +5 (目前: ${this.playerAttack})`, {
+        const bonusText = this.add.text(gameWidth/2, gameHeight * 0.58, `生命值上限 +20\n攻擊力 +5 (目前: ${this.playerAttack})`, {
             fontSize: '22px',
             fill: '#ffffff',
             stroke: '#000000',
@@ -1127,7 +1406,7 @@ class GameScene extends Phaser.Scene {
     drawMiniMap() {
         // 設定小地圖大小和位置
         const size = 20, gap = 4;
-        const offsetX = 685 - (this.mapSize * (size + gap)) / 2;
+        const offsetX = 1285 - (this.mapSize * (size + gap)) / 2;
         const offsetY = 130 - (this.mapSize * (size + gap)) / 2;
         
         // 清除舊的小地圖圖形
@@ -1243,9 +1522,13 @@ class GameScene extends Phaser.Scene {
     
     // --- 血量條更新 ---
     updateHealthBar() {
+        // 獲取實際畫布尺寸
+        const gameWidth = this.sys.game.config.width;
+        const gameHeight = this.sys.game.config.height;
+        
         this.healthBar.clear();
-        this.healthBar.fillStyle(0x808080).fillRect(20, 20, 200, 20);
-        this.healthBar.fillStyle(0xff0000).fillRect(20, 20, 2 * this.playerHealth, 20);
+        this.healthBar.fillStyle(0x808080).fillRect(gameWidth * 0.025, gameHeight * 0.033, 200, 20);
+        this.healthBar.fillStyle(0xff0000).fillRect(gameWidth * 0.025, gameHeight * 0.033, 2 * this.playerHealth, 20);
         this.healthText.setText(`HP: ${this.playerHealth}`);
     }
     updateSlimeHealthBar() {
@@ -1302,10 +1585,23 @@ class GameScene extends Phaser.Scene {
     
     // --- 顯示失敗與重新開始按鈕 ---
     showGameOverUI() {
+        // 獲取實際畫布尺寸
+        const gameWidth = this.sys.game.config.width;
+        const gameHeight = this.sys.game.config.height;
+        
         // 失敗大字
-        this.failText = this.add.text(400, 220, '失敗', { fontSize: '64px', fill: '#ff0000', fontStyle: 'bold' }).setOrigin(0.5);
+        this.failText = this.add.text(gameWidth/2, gameHeight * 0.37, '失敗', { 
+            fontSize: Math.min(gameWidth, gameHeight) * 0.11 + 'px', 
+            fill: '#ff0000', 
+            fontStyle: 'bold' 
+        }).setOrigin(0.5);
         // 重新開始按鈕
-        this.restartBtn = this.add.text(400, 320, '重新開始', { fontSize: '36px', fill: '#fff', backgroundColor: '#222', padding: { x: 30, y: 10 } })
+        this.restartBtn = this.add.text(gameWidth/2, gameHeight * 0.53, '重新開始', { 
+            fontSize: Math.min(gameWidth, gameHeight) * 0.06 + 'px', 
+            fill: '#fff', 
+            backgroundColor: '#222', 
+            padding: { x: 30, y: 10 } 
+        })
             .setOrigin(0.5)
             .setInteractive({ useHandCursor: true });
         this.restartBtn.on('pointerdown', () => {
@@ -1315,6 +1611,10 @@ class GameScene extends Phaser.Scene {
     
     // 添加門碰撞處理方法
     handleDoorCollision(direction) {
+        // 獲取實際畫布尺寸
+        const gameWidth = this.sys.game.config.width;
+        const gameHeight = this.sys.game.config.height;
+        
         // 防止重複快速切換
         if (this.isChangingRoom) {
             console.log('正在切換房間，請稍候...');
@@ -1362,18 +1662,21 @@ class GameScene extends Phaser.Scene {
                 this.generateRoom(this.roomX, this.roomY);
                 
                 // 設定玩家位置到新房間正確的入口位置
+                const gameWidth = this.sys.game.config.width;
+                const gameHeight = this.sys.game.config.height;
+                
                 switch(direction) {
                     case 'left':
-                        this.player.setPosition(700, 300); // 右側入口
+                        this.player.setPosition(gameWidth - 100, gameHeight/2); // 右側入口
                         break;
                     case 'right':
-                        this.player.setPosition(100, 300);  // 左側入口
+                        this.player.setPosition(100, gameHeight/2);  // 左側入口
                         break; 
                     case 'up':
-                        this.player.setPosition(400, 500); // 下方入口
+                        this.player.setPosition(gameWidth/2, gameHeight - 100); // 下方入口
                         break;
                     case 'down':
-                        this.player.setPosition(400, 100);  // 上方入口
+                        this.player.setPosition(gameWidth/2, 100);  // 上方入口
                         break;
                 }
                 
@@ -1387,7 +1690,7 @@ class GameScene extends Phaser.Scene {
                 if (direction === 'up') dirText = '向北';
                 if (direction === 'down') dirText = '向南';
                 
-                const roomText = this.add.text(400, 100, `${dirText}移動到新房間 (${this.roomX},${this.roomY})`, { 
+                const roomText = this.add.text(gameWidth/2, gameHeight * 0.17, `${dirText}移動到新房間 (${this.roomX},${this.roomY})`, { 
                     fontSize: '20px', 
                     fill: '#ffffff',
                     backgroundColor: '#000000',
@@ -1465,6 +1768,13 @@ class GameScene extends Phaser.Scene {
         
         // --- 發射劍氣，方向依照面向 ---
         if (Phaser.Input.Keyboard.JustDown(this.spaceKey)) {
+            // 播放揮劍音效
+            try {
+                this.slashSound.play();
+            } catch (error) {
+                console.warn('播放揮劍音效失敗:', error);
+            }
+            
             let slash = this.slashes.create(this.player.x, this.player.y, 'slash');
     slash.setScale(0.05);
     slash.body.setAllowGravity(false);
@@ -1502,11 +1812,23 @@ class GameScene extends Phaser.Scene {
         
         // 技能一：Q鍵施放範圍爆炸
         if (Phaser.Input.Keyboard.JustDown(this.qKey)) {
+            // 播放技能一音效
+            try {
+                this.skill1Sound.play();
+            } catch (error) {
+                console.warn('播放技能一音效失敗:', error);
+            }
             this.useSkill1();
         }
         
         // 技能二：W鍵施放三重能量彈
         if (Phaser.Input.Keyboard.JustDown(this.wKey)) {
+            // 播放技能二音效
+            try {
+                this.skill2Sound.play();
+            } catch (error) {
+                console.warn('播放技能二音效失敗:', error);
+            }
             this.useSkill2();
         }
         
@@ -1551,11 +1873,15 @@ class GameScene extends Phaser.Scene {
     updateBossHealthBar() {
         if (!this.boss || !this.bossHealthBar) return;
         
+        // 獲取實際畫布尺寸
+        const gameWidth = this.sys.game.config.width;
+        const gameHeight = this.sys.game.config.height;
+        
         this.bossHealthBar.clear();
         
         // Boss血條背景
         this.bossHealthBar.fillStyle(0x222222, 0.8);
-        this.bossHealthBar.fillRect(150, 30, 500, 25);
+        this.bossHealthBar.fillRect(gameWidth * 0.1875, gameHeight * 0.05, gameWidth * 0.625, 25);
         
         // Boss血條
         const healthPercent = this.boss.bossHealth / this.boss.maxHealth;
@@ -1571,11 +1897,11 @@ class GameScene extends Phaser.Scene {
         }
         
         this.bossHealthBar.fillStyle(barColor, 1);
-        this.bossHealthBar.fillRect(150, 30, 500 * healthPercent, 25);
+        this.bossHealthBar.fillRect(gameWidth * 0.1875, gameHeight * 0.05, (gameWidth * 0.625) * healthPercent, 25);
         
         // 顯示Boss名稱和血量
         if (!this.bossNameText) {
-            this.bossNameText = this.add.text(400, 15, '暗影魔王', {
+            this.bossNameText = this.add.text(gameWidth/2, gameHeight * 0.025, '暗影魔王', {
                 fontSize: '18px',
                 fill: '#ffffff',
                 stroke: '#000000',
@@ -1584,7 +1910,7 @@ class GameScene extends Phaser.Scene {
         }
         
         if (!this.bossHealthText) {
-            this.bossHealthText = this.add.text(400, 42, `${this.boss.bossHealth}/${this.boss.maxHealth}`, {
+            this.bossHealthText = this.add.text(gameWidth/2, gameHeight * 0.07, `${this.boss.bossHealth}/${this.boss.maxHealth}`, {
                 fontSize: '16px',
                 fill: '#ffffff'
             }).setOrigin(0.5);
@@ -1595,10 +1921,14 @@ class GameScene extends Phaser.Scene {
     
     // 普通房間生成(原有的生成邏輯)
     generateNormalRoom() {
+        // 獲取實際畫布尺寸
+        const gameWidth = this.sys.game.config.width;
+        const gameHeight = this.sys.game.config.height;
+        
         // 隨機生成寶箱
         if (this.random.frac() < 0.5) {
-            const chestX = this.random.between(100, 700);
-            const chestY = this.random.between(100, 500);
+            const chestX = this.random.between(100, gameWidth - 100);
+            const chestY = this.random.between(100, gameHeight - 100);
             this.chest = this.physics.add.image(chestX, chestY, 'chest').setScale(1.7);
             this.chest.body.setAllowGravity(false);
             this.physics.add.overlap(this.player, this.chest, () => {
@@ -1607,7 +1937,7 @@ class GameScene extends Phaser.Scene {
                 this.energyPrompt.setVisible(true);
                 
                 // 添加獲得寶箱的提示
-                const treasureText = this.add.text(400, 150, '獲得寶箱！能量飲料已添加到物品欄', { 
+                const treasureText = this.add.text(gameWidth/2, gameHeight * 0.25, '獲得寶箱！能量飲料已添加到物品欄', { 
                     fontSize: '18px', 
                     fill: '#ffff00'
                 }).setOrigin(0.5);
@@ -1641,8 +1971,8 @@ class GameScene extends Phaser.Scene {
             // 確保怪物之間有足夠距離
             do {
                 isValidPosition = true;
-                slimeX = this.random.between(100, 700);
-                slimeY = this.random.between(100, 500);
+                slimeX = this.random.between(100, gameWidth - 100);
+                slimeY = this.random.between(100, gameHeight - 100);
                 
                 // 檢查與寶箱的距離
                 if (this.chest && 
@@ -1869,33 +2199,37 @@ class GameScene extends Phaser.Scene {
 
     // 創建技能UI顯示
     createSkillUI() {
-        // 技能一圖標與冷卻顯示
-        this.skill1Icon = this.add.image(700, 450, 'skill1').setScale(0.4).setAlpha(0.5);
-        this.skill1CooldownText = this.add.text(700, 450, '', {
+        // 獲取實際畫布尺寸
+        const gameWidth = this.sys.game.config.width;
+        const gameHeight = this.sys.game.config.height;
+        
+        // 技能一圖標與冷卻顯示 - 響應式位置
+        this.skill1Icon = this.add.image(gameWidth * 0.875, gameHeight * 0.75, 'skill1').setScale(0.4).setAlpha(0.5);
+        this.skill1CooldownText = this.add.text(gameWidth * 0.875, gameHeight * 0.75, '', {
             fontSize: '16px',
             fill: '#ffffff',
             stroke: '#000000',
             strokeThickness: 2
         }).setOrigin(0.5).setVisible(false);
         
-        // 技能二圖標與冷卻顯示
-        this.skill2Icon = this.add.image(780, 450, 'skill2').setScale(0.4).setAlpha(0.5);
-        this.skill2CooldownText = this.add.text(770, 450, '', {
+        // 技能二圖標與冷卻顯示 - 響應式位置
+        this.skill2Icon = this.add.image(gameWidth * 0.975, gameHeight * 0.75, 'skill2').setScale(0.4).setAlpha(0.5);
+        this.skill2CooldownText = this.add.text(gameWidth * 0.963, gameHeight * 0.75, '', {
             fontSize: '16px',
             fill: '#ffffff',
             stroke: '#000000',
             strokeThickness: 2
         }).setOrigin(0.5).setVisible(false);
         
-        // 技能鍵位提示
-        this.add.text(700, 485, 'Q', {
+        // 技能鍵位提示 - 響應式位置
+        this.add.text(gameWidth * 0.875, gameHeight * 0.808, 'Q', {
             fontSize: '16px',
             fill: '#ffffff',
             backgroundColor: '#000000',
             padding: { x: 5, y: 2 }
         }).setOrigin(0.5);
         
-        this.add.text(770, 485, 'W', {
+        this.add.text(gameWidth * 0.963, gameHeight * 0.808, 'W', {
             fontSize: '16px',
             fill: '#ffffff',
             backgroundColor: '#000000',
@@ -1967,6 +2301,10 @@ class GameScene extends Phaser.Scene {
     
     // 顯示技能解鎖訊息
     showSkillUnlockMessage(skillNumber) {
+        // 獲取實際畫布尺寸
+        const gameWidth = this.sys.game.config.width;
+        const gameHeight = this.sys.game.config.height;
+        
         const skillName = skillNumber === 1 ? '爆炸衝擊' : '能量彈';
         const skillKey = skillNumber === 1 ? 'Q' : 'W';
         
@@ -1974,7 +2312,7 @@ class GameScene extends Phaser.Scene {
         this.cameras.main.flash(500, 0, 255, 255);
         
         // 解鎖訊息
-        const unlockText = this.add.text(400, 250, `解鎖技能：${skillName}！`, {
+        const unlockText = this.add.text(gameWidth/2, gameHeight * 0.42, `解鎖技能：${skillName}！`, {
             fontSize: '36px',
             fill: '#00ffff',
             stroke: '#000000',
@@ -1982,7 +2320,7 @@ class GameScene extends Phaser.Scene {
         }).setOrigin(0.5).setDepth(100);
         
         // 使用說明
-        const instructionText = this.add.text(400, 300, `按下 ${skillKey} 鍵使用技能`, {
+        const instructionText = this.add.text(gameWidth/2, gameHeight/2, `按下 ${skillKey} 鍵使用技能`, {
             fontSize: '24px',
             fill: '#ffffff',
             stroke: '#000000',
@@ -1990,7 +2328,7 @@ class GameScene extends Phaser.Scene {
         }).setOrigin(0.5).setDepth(100);
         
         // 添加技能圖示
-        const skillIcon = this.add.image(400, 350, `skill${skillNumber}`).setScale(0.6).setDepth(100);
+        const skillIcon = this.add.image(gameWidth/2, gameHeight * 0.58, `skill${skillNumber}`).setScale(0.6).setDepth(100);
         
         // 動畫效果
         this.tweens.add({
@@ -2343,15 +2681,24 @@ class GameScene extends Phaser.Scene {
 // --- 遊戲設定，啟動大廳場景 ---
 const config = {
     type: Phaser.AUTO,
-    width: 800,
-    height: 600,
+    width: window.innerWidth,  // 使用視窗寬度
+    height: window.innerHeight, // 使用視窗高度
     pixelArt: true,
     physics: {
         default: 'arcade',
         arcade: { debug: false }
     },
-    scene: [LobbyScene, GameScene] // 多場景，預設啟動 LobbyScene
+    scene: [LobbyScene, GameScene], // 多場景，預設啟動 LobbyScene
+    scale: {
+        mode: Phaser.Scale.RESIZE, // 允許調整大小
+        autoCenter: Phaser.Scale.CENTER_BOTH // 居中顯示
+    }
 };
+
+// 添加視窗大小變化監聽器
+window.addEventListener('resize', () => {
+    game.scale.resize(window.innerWidth, window.innerHeight);
+});
 
 // 添加全局錯誤處理
 window.onerror = function(message, source, lineno, colno, error) {

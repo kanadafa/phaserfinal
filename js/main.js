@@ -1,12 +1,12 @@
 // 遊戲配置列表
 const games = [
-    { name: '少女歸途', path: './games/G02_少女歸途/index.html', pic: './games/G02_少女歸途/pic.jpg' },
-    { name: '女巫的藥水', path: './games/G03_女巫的藥水/index.html', pic: './games/G03_女巫的藥水/pic.png' },
-    { name: '勇者試煉', path: './games/G04_勇者試煉/index.html', pic: './games/G04_勇者試煉/pic.png' },
-    { name: 'Lone Escape', path: './games/G05_Lone Escape-Descent into Darkness/MainGame.html', pic: './games/G05_Lone Escape-Descent into Darkness/pic.png' },
-    { name: 'Maze King', path: './games/G06_Maze King/index.html', pic: './games/G06_Maze King/pic.png' },
-    { name: '獵人X蘋果', path: './games/G07_獵人X蘋果/index.html', pic: './games/G07_獵人X蘋果/pic.png' },
-    { name: '畫廊迷蹤', path: './games/G08_畫廊迷蹤/start.html', pic: './games/G08_畫廊迷蹤/pic.png' }
+    { name: 'G02_少女歸途', path: './games/G02_少女歸途/index.html', pic: './games/G02_少女歸途/pic.jpg' },
+    { name: 'G03_女巫的藥水', path: './games/G03_女巫的藥水/index.html', pic: './games/G03_女巫的藥水/pic.png' },
+    { name: 'G04_勇者試煉', path: './games/G04_勇者試煉/index.html', pic: './games/G04_勇者試煉/pic.png' },
+    { name: 'G05_Lone Escape', path: './games/G05_Lone Escape-Descent into Darkness/MainGame.html', pic: './games/G05_Lone Escape-Descent into Darkness/pic.png' },
+    { name: 'G06_Maze King', path: './games/G06_Maze King/index.html', pic: './games/G06_Maze King/pic.png' },
+    { name: 'G07_獵人X蘋果', path: './games/G07_獵人X蘋果/index.html', pic: './games/G07_獵人X蘋果/pic.png' },
+    { name: 'G08_畫廊迷蹤', path: './games/G08_畫廊迷蹤/index.html', pic: './games/G08_畫廊迷蹤/pic.png' }
 ];
 
 let currentGame = null;
